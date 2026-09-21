@@ -6,10 +6,10 @@ import * as schema from '../db/schema/auth.ts';
 import { db } from "../db/index.ts";
 
 export const auth = betterAuth({
-  baseURL: "http://localhost:8000",
+  baseURL: "http://localhost:8001",
   trustedOrigins: async () => {
     return [
-      'http://localhost:3000'
+      'http://localhost:3001'
     ]
   },
   database: drizzleAdapter(db, {
