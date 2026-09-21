@@ -1,5 +1,5 @@
 import type { Request } from "express";
-import type { ParentSchema } from "../middlewares/validators/parentvalidators.ts";
+import type { ParentSchema } from "../middlewares/validators/parent.validator.ts";
 import { bindAll } from "../../common/utils/index.ts";
 import { currentUser } from "../middlewares/auth.middleware.ts";
 
