@@ -3,7 +3,7 @@ import { fromNodeHeaders } from "better-auth/node";
 import { APIError } from "better-auth/api";
 import { auth } from "../../auth/index.ts";
 import { db } from "../../db/index.ts";
-import { organization } from "../../db/schema/auth.ts";
+import { organization } from "../../db/schema/auth.schema.ts";
 import { bindAll } from "../../common/utils/index.ts";
 import { currentUser } from "../middlewares/auth.middleware.ts";
 import { addMemberSchema } from "../middlewares/validators/membervalidators.ts";

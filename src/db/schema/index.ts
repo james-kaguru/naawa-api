@@ -1,8 +1,14 @@
-import { integer, pgTable, varchar } from "drizzle-orm/pg-core";
+import { integer, pgTable, text, uuid, varchar } from "drizzle-orm/pg-core";
+import { member, user } from "./auth.schema";
 
-export const attendances = pgTable("attendances", {
-  id: integer().primaryKey().generatedAlwaysAsIdentity(),
-  name: varchar({ length: 255 }).notNull(),
-  age: integer().notNull(),
-  email: varchar({ length: 255 }).notNull().unique(),
+export const parents = pgTable("parents", {
+  id: uuid().primaryKey().notNull(),
+  name: text('name').notNull(),
+  memberId: text('member_id').notNull().references(() => member.id, { onDelete: 'cascade' }),
+});
+
+export const parents = pgTable("parents", {
+  id: uuid().primaryKey().notNull(),
+  name: text('name').notNull(),
+  userId: text('user_id').notNull().references(() => user.id, { onDelete: 'cascade' }),
 });
