@@ -3,66 +3,67 @@ import { member, user } from "./auth.schema";
 import { defineRelationsPart } from "drizzle-orm";
 
 export const parent = pgTable("parents", {
-  id: uuid().primaryKey().notNull(),
+  id: uuid().primaryKey().defaultRandom(),
   memberId: text('member_id').notNull().references(() => member.id),
   name: text('name').notNull(),
 });
 
 export const child = pgTable("children", {
-  id: uuid().primaryKey().notNull(),
-  parentId: text('parent_id').notNull().references(() => parent.id,),
+  id: uuid().primaryKey().defaultRandom(),
+  parentId: uuid('parent_id').notNull().references(() => parent.id,),
   name: text('name').notNull(),
 });
 
 export const childrenCentre = pgTable("children_centres", {
-  id: uuid().primaryKey().notNull(),
+  id: uuid().primaryKey().defaultRandom(),
   name: text('name').notNull(),
   location: text('location').notNull(),
 });
 
-export const enrollmentStatus = pgEnum('enrolled', ['archived']);
+export const enrollmentStatus = pgEnum('enrollment_status', ['enrolled', 'archived']);
 
 export const enrollment = pgTable("enrollments", {
-  id: uuid().primaryKey().notNull(),
-  childId: text('child_id').notNull().references(() => child.id,),
-  childrenCentreId: text('child_center_id').notNull().references(() => childrenCentre.id,),
+  id: uuid().primaryKey().defaultRandom(),
+  childId: uuid('child_id').notNull().references(() => child.id,),
+  childrenCentreId: uuid('child_center_id').notNull().references(() => childrenCentre.id,),
   status: enrollmentStatus().notNull(),
   startDate: date().notNull(),
   endDate: date(),
 });
 
-export const attendanceStatus = pgEnum('checkedIn', ['checkedOut']);
+export const attendanceStatus = pgEnum('attendance_status', ['checkedIn', 'checkedOut']);
 
 export const attendance = pgTable("attendances", {
-  id: uuid().primaryKey().notNull(),
-  enrollmentId: text('enrollment_id').notNull().references(() => enrollment.id),
+  id: uuid().primaryKey().defaultRandom(),
+  enrollmentId: uuid('enrollment_id').notNull().references(() => enrollment.id),
   memberId: text('member_id').notNull().references(() => member.id),
   status: attendanceStatus().notNull(),
   signedInAt: timestamp().defaultNow(),
   signedOutAt: timestamp(),
 });
 
-export const attendanceLogAction = pgEnum('checkIn', ['checkOut']);
+export const attendanceLogAction = pgEnum('attendance_log_action', ['checkIn', 'checkOut']);
 
-export const attendanceLog = pgTable("attendances", {
-  id: uuid().primaryKey().notNull(),
-  attendanceId: text('attendance_id').notNull().references(() => attendance.id),
+export const attendanceLog = pgTable("attendance_logs", {
+  id: uuid().primaryKey().defaultRandom(),
+  attendanceId: uuid('attendance_id').notNull().references(() => attendance.id),
   action: attendanceLogAction().notNull(),
   createdAt: timestamp().defaultNow(),
 });
 
 export const incident = pgTable("incidences", {
-  id: uuid().primaryKey().notNull(),
-  attendanceId: text('attendance_id').notNull().references(() => attendance.id),
-  name: text('member_id').notNull().references(() => member.id),
+  id: uuid().primaryKey().defaultRandom(),
+  attendanceId: uuid('attendance_id').notNull().references(() => attendance.id),
+  memberId: text('member_id').notNull().references(() => member.id),
+  description: text('description').notNull(),
   createdAt: timestamp().defaultNow(),
   updatedAt: timestamp().defaultNow().$onUpdate(() => new Date()),
 });
 
 export const incidentLog = pgTable("incident_logs", {
-  id: uuid().primaryKey().notNull(),
-  incidentId: text('incident_id').notNull().references(() => incident.id),
-  details: attendanceLogAction().notNull(),
+  id: uuid().primaryKey().defaultRandom(),
+  incidentId: uuid('incident_id').notNull().references(() => incident.id),
+  details: text('details').notNull(),
   createdAt: timestamp().defaultNow(),
   updatedAt: timestamp().defaultNow().$onUpdate(() => new Date()),
 });
@@ -101,7 +102,7 @@ export const dbRelations = defineRelationsPart({ parent, child, childrenCentre, 
   childrenCentre: {
     enrollments: r.many.enrollment({
       from: r.childrenCentre.id,
-      to: r.enrollment.id
+      to: r.enrollment.childrenCentreId
     })
   },
   enrollment: {
@@ -113,6 +114,10 @@ export const dbRelations = defineRelationsPart({ parent, child, childrenCentre, 
       from: r.enrollment.childId,
       to: r.child.id
     }),
+    attendances: r.many.attendance({
+      from: r.enrollment.id,
+      to: r.attendance.enrollmentId
+    })
   },
   attendance: {
     enrollment: r.one.enrollment({
@@ -134,7 +139,7 @@ export const dbRelations = defineRelationsPart({ parent, child, childrenCentre, 
   },
   attendanceLog: {
     attendance: r.one.attendance({
-      from: r.attendanceLog.id,
+      from: r.attendanceLog.attendanceId,
       to: r.attendance.id
     }),
   },
