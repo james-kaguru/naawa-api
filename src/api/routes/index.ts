@@ -1,5 +1,5 @@
 import { Router } from "express";
-import parentRouter from "./parent.router.ts";
+import { parentRouter } from "./parent-router";
 import memberRouter from "./member.router.ts";
 
 const router: Router = Router();

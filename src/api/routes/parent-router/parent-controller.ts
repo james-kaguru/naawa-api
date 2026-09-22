@@ -1,6 +1,6 @@
 import type { Request } from "express";
 import type { CreateParentSchema } from "./parent.request.ts";
-import { bindAll } from "../../../common/utils/index.ts";
+import { bindAll } from "@/common/utils";
 import { currentUser } from "../../middlewares/auth.middleware.ts";
 
 class ParentController {
