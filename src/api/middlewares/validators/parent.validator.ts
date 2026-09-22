@@ -1,7 +1,8 @@
 import { z } from "zod";
 
-export const parentSchema = z.object({
+export const createParentSchema = z.object({
   name: z.string(),
+  memberId: z.string(),
 });
 
-export type ParentSchema = z.infer<typeof parentSchema>;
+export type CreateParentSchema = z.infer<typeof createParentSchema>;

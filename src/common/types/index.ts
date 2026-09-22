@@ -18,7 +18,6 @@ type PaginationLinks = {
   last: string;
 };
 
-
 export interface PaginationServiceResponse<TData> {
   data: TData[],
   meta: PaginationMeta
