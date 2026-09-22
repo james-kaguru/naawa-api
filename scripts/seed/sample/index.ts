@@ -1,9 +1,15 @@
 import { and, eq } from "drizzle-orm"
 import { auth } from "@/auth"
 import { db } from "@/db"
-import { member, organization, user } from "@/db/schema/auth.schema"
+import { member, organization, organizationRole, user } from "@/db/schema/auth.schema"
 
-type Role = "owner" | "admin" | "member"
+// Dynamic roles stored per organization, on top of the static owner/admin/member roles
+const organizationRoles: { role: string, permission: Record<string, string[]> }[] = [
+  { role: "parent", permission: {} },
+  { role: "receptionist", permission: {} },
+]
+
+type Role = "owner" | "admin" | "member" | "parent" | "receptionist"
 
 const users = [
   { name: "jimmy", email: "jimmykaguru@gmail.com", password: "jimmykaguru@gmail.com", platformAdmin: true },
@@ -66,6 +72,24 @@ async function seedOrganizations(userIds: Map<string, string>) {
       }
 
       const organizationId = existing!.id
+
+      for (const r of organizationRoles) {
+        const [role] = await tx.select({ id: organizationRole.id })
+          .from(organizationRole)
+          .where(and(eq(organizationRole.organizationId, organizationId), eq(organizationRole.role, r.role)))
+
+        if (role) continue
+
+        // Better Auth stores permissions as a JSON string
+        await tx.insert(organizationRole).values({
+          id: crypto.randomUUID(),
+          organizationId,
+          role: r.role,
+          permission: JSON.stringify(r.permission),
+        })
+
+        console.log(`role: ${r.role} -> ${org.slug}`)
+      }
 
       for (const m of [{ email: org.owner, role: "owner" as Role }, ...org.members]) {
         const userId = userIds.get(m.email)

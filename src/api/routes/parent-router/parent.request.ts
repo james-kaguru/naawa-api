@@ -3,6 +3,8 @@ import { z } from "zod";
 
 export const createParentSchema = z.object({
   name: z.string().trim().min(2),
+  email: z.email().trim(),
+  password: z.string().trim(),
   memberId: z.string().trim().min(2),
 });
 
