@@ -8,3 +8,5 @@ import { dbRelations } from './schema/index.ts';
 export const db = drizzle(process.env.DATABASE_URL!, {
   relations: { ...authRelations, ...dbRelations }
 });
+
+export type Db = typeof db;

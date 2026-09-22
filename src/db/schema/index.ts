@@ -8,6 +8,8 @@ export const parent = pgTable("parents", {
   name: text('name').notNull(),
 });
 
+export type ParentTable = typeof parent;
+
 export const child = pgTable("children", {
   id: uuid().primaryKey().defaultRandom(),
   parentId: uuid('parent_id').notNull().references(() => parent.id,),
