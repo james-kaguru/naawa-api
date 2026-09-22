@@ -1,14 +1,16 @@
 import type { Request } from "express";
-import type { CreateParentSchema } from "./parent.request.ts";
+import type { CreateParentSchema, FindParentsSchema } from "./parent.request.ts";
 import { bindAll } from "@/common/utils";
 import { currentUser } from "../../middlewares/auth.middleware.ts";
+import type { Req } from "@/common/types";
 
 class ParentController {
   constructor() {
     bindAll(this);
   }
 
-  find(req: Request<unknown, unknown, CreateParentSchema>) {
+  find(req: Req<{ query: FindParentsSchema }>) {
+    console.log(req.query)
     return "find";
   }
 

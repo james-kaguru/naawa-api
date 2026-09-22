@@ -1,7 +1,25 @@
 import type { Request, Response } from 'express';
 
-export type Req = Request
-export type Res = Response
+type ReqShape = {
+  params?: unknown;
+  body?: unknown;
+  query?: unknown;
+};
+
+type Field<T, K extends keyof ReqShape, Default> = T extends Record<K, infer V> ? V : Default;
+
+/**
+ * Express Request typed by name instead of position, mirroring `validate({ params, body, query })`.
+ * @example Req<{ query: FindParentsSchema }>
+ */
+export type Req<T extends ReqShape = {}> = Request<
+  Field<T, "params", Request["params"]>,
+  unknown,
+  Field<T, "body", unknown>,
+  Field<T, "query", Request["query"]>
+>
+
+export type Res<ResBody = unknown> = Response<ResBody>
 
 interface PaginationMeta {
   page: number,

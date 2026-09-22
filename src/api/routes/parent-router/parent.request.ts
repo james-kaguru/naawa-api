@@ -1,3 +1,4 @@
+import { paginationQuerySchema } from "@/api/schemas";
 import { z } from "zod";
 
 export const createParentSchema = z.object({
@@ -6,3 +7,10 @@ export const createParentSchema = z.object({
 });
 
 export type CreateParentSchema = z.infer<typeof createParentSchema>;
+
+
+export const findParentsSchema = paginationQuerySchema.extend({
+  name: z.string().optional(),
+})
+
+export type FindParentsSchema = z.infer<typeof findParentsSchema>;
