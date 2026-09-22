@@ -1,5 +1,5 @@
 import { date, integer, pgEnum, pgTable, text, timestamp, uuid, varchar } from "drizzle-orm/pg-core";
-import { member, user } from "./auth.schema";
+import { account, invitation, member, organization, organizationRole, session, user, verification } from "./auth.schema";
 import { defineRelationsPart } from "drizzle-orm";
 
 export const parent = pgTable("parents", {
@@ -70,7 +70,7 @@ export const incidentLog = pgTable("incident_logs", {
   updatedAt: timestamp().defaultNow().$onUpdate(() => new Date()),
 });
 
-export const dbRelations = defineRelationsPart({ parent, child, childrenCentre, enrollment, attendance, attendanceLog, incident, incidentLog, member }, (r) => ({
+export const dbRelations = defineRelationsPart({ parent, child, childrenCentre, enrollment, attendance, attendanceLog, incident, incidentLog, member, user, session, account, verification, organization, organizationRole, invitation }, (r) => ({
   parent: {
     member: r.one.member({
       from: r.parent.memberId,
@@ -79,16 +79,6 @@ export const dbRelations = defineRelationsPart({ parent, child, childrenCentre, 
     children: r.many.child({
       from: r.parent.id,
       to: r.child.parentId,
-    })
-  },
-  member: {
-    parent: r.one.parent({
-      from: r.member.id,
-      to: r.parent.memberId
-    }),
-    attendances: r.many.attendance({
-      from: r.member.id,
-      to: r.attendance.memberId,
     })
   },
   child: {
@@ -161,4 +151,84 @@ export const dbRelations = defineRelationsPart({ parent, child, childrenCentre, 
       to: r.incident.id
     }),
   },
+
+  // auth
+  user: {
+    sessions: r.many.session({
+      from: r.user.id,
+      to: r.session.userId,
+    }),
+    accounts: r.many.account({
+      from: r.user.id,
+      to: r.account.userId,
+    }),
+    members: r.many.member({
+      from: r.user.id,
+      to: r.member.userId,
+    }),
+    invitations: r.many.invitation({
+      from: r.user.id,
+      to: r.invitation.inviterId,
+    })
+  },
+  session: {
+    user: r.one.user({
+      from: r.session.userId,
+      to: r.user.id,
+    })
+  },
+  account: {
+    user: r.one.user({
+      from: r.account.userId,
+      to: r.user.id,
+    })
+  },
+  organization: {
+    organizationRoles: r.many.organizationRole({
+      from: r.organization.id,
+      to: r.organizationRole.organizationId,
+    }),
+    members: r.many.member({
+      from: r.organization.id,
+      to: r.member.organizationId,
+    }),
+    invitations: r.many.invitation({
+      from: r.organization.id,
+      to: r.invitation.organizationId,
+    })
+  },
+  organizationRole: {
+    organization: r.one.organization({
+      from: r.organizationRole.organizationId,
+      to: r.organization.id,
+    })
+  },
+  member: {
+    organization: r.one.organization({
+      from: r.member.organizationId,
+      to: r.organization.id,
+    }),
+    user: r.one.user({
+      from: r.member.userId,
+      to: r.user.id,
+    }),
+    parent: r.one.parent({
+      from: r.member.id,
+      to: r.parent.memberId
+    }),
+    attendances: r.many.attendance({
+      from: r.member.id,
+      to: r.attendance.memberId,
+    })
+  },
+  invitation: {
+    organization: r.one.organization({
+      from: r.invitation.organizationId,
+      to: r.organization.id,
+    }),
+    user: r.one.user({
+      from: r.invitation.inviterId,
+      to: r.user.id,
+    })
+  }
 }));
