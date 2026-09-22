@@ -25,7 +25,7 @@ export const enrollmentStatus = pgEnum('enrolled', ['archived']);
 export const enrollment = pgTable("enrollments", {
   id: uuid().primaryKey().notNull(),
   childId: text('child_id').notNull().references(() => child.id,),
-  childrenCentre: text('child_center_id').notNull().references(() => childrenCentre.id,),
+  childrenCentreId: text('child_center_id').notNull().references(() => childrenCentre.id,),
   status: enrollmentStatus().notNull(),
   startDate: date().notNull(),
   endDate: date(),
@@ -94,8 +94,8 @@ export const dbRelations = defineRelationsPart({ parent, child, childrenCentre, 
       to: r.parent.id
     }),
     enrollments: r.many.enrollment({
-      from: r.childrenCentre.id,
-      to: r.child.id
+      from: r.child.id,
+      to: r.enrollment.childId
     })
   },
   childrenCentre: {
@@ -106,7 +106,7 @@ export const dbRelations = defineRelationsPart({ parent, child, childrenCentre, 
   },
   enrollment: {
     childrenCentre: r.one.childrenCentre({
-      from: r.enrollment.id,
+      from: r.enrollment.childrenCentreId,
       to: r.childrenCentre.id
     }),
     child: r.one.child({
@@ -123,21 +123,33 @@ export const dbRelations = defineRelationsPart({ parent, child, childrenCentre, 
       from: r.attendance.memberId,
       to: r.member.id
     }),
+    incidences: r.many.incident({
+      from: r.attendance.id,
+      to: r.incident.attendanceId,
+    }),
+    attendanceLogs: r.many.attendanceLog({
+      from: r.attendance.id,
+      to: r.attendanceLog.attendanceId,
+    }),
   },
   attendanceLog: {
     attendance: r.one.attendance({
-      from: r.attendanceLog.attendanceId,
+      from: r.attendanceLog.id,
       to: r.attendance.id
     }),
   },
   incident: {
     attendance: r.one.attendance({
-      from: r.attendanceLog.attendanceId,
+      from: r.incident.attendanceId,
       to: r.attendance.id
+    }),
+    incedentLogs: r.many.incidentLog({
+      from: r.incident.id,
+      to: r.incidentLog.incidentId,
     }),
   },
   incidentLog: {
-    attendance: r.one.attendance({
+    incident: r.one.incident({
       from: r.incidentLog.incidentId,
       to: r.incident.id
     }),
