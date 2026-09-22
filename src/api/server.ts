@@ -8,6 +8,7 @@ import { toNodeHandler } from "better-auth/node";
 import { auth } from '../auth/index.ts';
 import cors from "cors";
 import { loadSession } from './middlewares/auth.middleware.ts';
+import errorMiddleware from './middlewares/error.middleware.ts';
 
 
 export default class ExpressServer {
@@ -72,10 +73,7 @@ export default class ExpressServer {
   }
 
   handleErrors() {
-    this.app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
-      console.error(err);
-      res.status(500).send('Something broke!');
-    });
+    this.app.use(errorMiddleware);
   }
 
   listen() {

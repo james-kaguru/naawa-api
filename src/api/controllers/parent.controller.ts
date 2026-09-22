@@ -1,5 +1,5 @@
 import type { Request } from "express";
-import type { ParentSchema } from "../middlewares/validators/parent.validator.ts";
+import type { CreateParentSchema } from "../middlewares/validators/parent.validators.ts";
 import { bindAll } from "../../common/utils/index.ts";
 import { currentUser } from "../middlewares/auth.middleware.ts";
 
@@ -8,11 +8,11 @@ class ParentController {
     bindAll(this);
   }
 
-  find(req: Request<unknown, unknown, ParentSchema>) {
+  find(req: Request<unknown, unknown, CreateParentSchema>) {
     return "find";
   }
 
-  findOne(req: Request<unknown, unknown, ParentSchema>) {
+  findOne(req: Request<unknown, unknown, CreateParentSchema>) {
     throw new Error("not implemented");
 
     return "findone";
