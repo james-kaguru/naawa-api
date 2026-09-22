@@ -1,9 +1,8 @@
 import { Router } from "express";
-import parentController from "../controllers/parent.controller.ts";
-import { handle } from "../../common/utils/index.ts";
+import { parentController, createParentSchema } from "@/api/controllers";
+import { handle } from "@/common/utils/index.ts";
 import { requireAuth } from "@/api/middlewares/auth.middleware";
 import { validate } from "@/api/middlewares/validate.middleware";
-import { createParentSchema } from "../middlewares/validators/parent.validators.ts";
 
 const router: Router = Router();
 

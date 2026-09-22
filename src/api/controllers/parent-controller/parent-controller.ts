@@ -1,7 +1,7 @@
 import type { Request } from "express";
-import type { CreateParentSchema } from "../middlewares/validators/parent.validators.ts";
-import { bindAll } from "../../common/utils/index.ts";
-import { currentUser } from "../middlewares/auth.middleware.ts";
+import type { CreateParentSchema } from "../../middlewares/validators/parent.validators.ts";
+import { bindAll } from "../../../common/utils/index.ts";
+import { currentUser } from "../../middlewares/auth.middleware.ts";
 
 class ParentController {
   constructor() {
@@ -31,4 +31,4 @@ class ParentController {
   }
 }
 
-export default new ParentController();
+export const parentController = new ParentController();
