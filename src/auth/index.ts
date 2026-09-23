@@ -4,6 +4,7 @@ import { admin, organization } from "better-auth/plugins"
 import { ac, owner, admin as adminRole, member } from "./roles.ts";
 import * as schema from '../db/schema/auth.schema.ts';
 import { db } from "../db/index.ts";
+import { apiKey } from "@better-auth/api-key";
 
 export const auth = betterAuth({
   baseURL: "http://localhost:8001",
@@ -36,7 +37,9 @@ export const auth = betterAuth({
       dynamicAccessControl: {
         enabled: true,
       },
-    })
+    }),
+    //@ts-expect-error
+    apiKey()
   ]
 });
 
