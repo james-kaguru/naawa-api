@@ -4,7 +4,6 @@ import type { Req, Res } from "@/common/types";
 import type { NextFunction } from "express";
 
 export default function errorMiddleware(err: Error, req: Req, res: Res, next: NextFunction) {
-  // console.log(err);
 
   if (err instanceof ValidationError) {
     res.status(err.status).json({
@@ -30,6 +29,8 @@ export default function errorMiddleware(err: Error, req: Req, res: Res, next: Ne
     })
     return
   }
+
+  console.log(err);
 
   res.status(500).json({
     status: 500,

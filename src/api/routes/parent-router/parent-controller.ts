@@ -4,6 +4,8 @@ import { bindAll } from "@/common/utils";
 import { currentUser } from "../../middlewares/auth.middleware.ts";
 import type { Req } from "@/common/types";
 import { parentService, type ParentService } from "@/services";
+import { auth } from "@/auth";
+import { ORGANIZATION_ID } from "@/common/constants";
 
 class ParentController {
   constructor(private parentService: ParentService) {
@@ -12,12 +14,27 @@ class ParentController {
 
   async create(req: Req<{ body: CreateParentSchema }>) {
     const body = req.body;
-    try {
-      const parent = await this.parentService.findByMemberId(body.memberId);
-      return parent;
-    } catch (e) {
-      return this.parentService.create(body)
-    }
+
+    const { user } = await auth.api.createUser({
+      body: {
+        email: body.email,
+        password: body.password,
+        name: body.name,
+        role: "user",
+      },
+    });
+
+    const data = await auth.api.addMember({
+      body: {
+        userId: user.id,
+        role: ["parent"],
+        organizationId: ORGANIZATION_ID,
+      },
+    });
+
+    console.log(data)
+    return "parent"
+
   }
 
   async find(req: Req<{ query: FindParentsSchema }>) {
