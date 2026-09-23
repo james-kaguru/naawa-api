@@ -1,11 +1,12 @@
 import type { Request } from "express";
-import type { CreateParentSchema, FindParentsSchema } from "./parent.request.ts";
+import type { CreateParentSchema, FindParentsSchema, UpdateParentSchema } from "./parent.request.ts";
 import { bindAll } from "@/common/utils";
 import { currentUser } from "../../middlewares/auth.middleware.ts";
 import type { Req } from "@/common/types";
 import { parentService, type ParentService } from "@/services";
 import { auth } from "@/auth";
 import { ORGANIZATION_ID } from "@/common/constants";
+import { fromNodeHeaders } from "better-auth/node";
 
 class ParentController {
   constructor(private parentService: ParentService) {
@@ -24,7 +25,7 @@ class ParentController {
       },
     });
 
-    const data = await auth.api.addMember({
+    const member = await auth.api.addMember({
       body: {
         userId: user.id,
         role: ["parent"],
@@ -32,29 +33,41 @@ class ParentController {
       },
     });
 
-    console.log(data)
-    return "parent"
+
+    const parent = await this.parentService.create({
+      memberId: member.id,
+      name: body.name
+    })
+
+    return parent;
 
   }
 
   async find(req: Req<{ query: FindParentsSchema }>) {
-
-    return "find";
+    return this.parentService.find(req.query);
   }
 
-  async findOne(req: Request<unknown, unknown, CreateParentSchema>) {
-    throw new Error("not implemented");
-
-    return "findone";
+  async findOne(req: Req<{ params: { id: string } }>) {
+    return this.parentService.findOne(req.params.id);
   }
 
-  async update() {
-    return "update";
+  async update(req: Req<{ params: { id: string }, body: UpdateParentSchema }>) {
+    await this.parentService.findOne(req.params.id);
+
+    await auth.api.updateUser({
+      body: {
+        name: req.body.name
+      },
+      headers: fromNodeHeaders(req.headers),
+    })
+
+    const parent = await this.parentService.update(req.params.id, {
+      name: req.body.name,
+    })
+
+    return parent;
   }
 
-  async delete() {
-    return "delete";
-  }
 }
 
 export const parentController = new ParentController(parentService);

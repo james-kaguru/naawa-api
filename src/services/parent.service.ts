@@ -12,7 +12,10 @@ export interface CreateParent {
   memberId: string
 }
 
-export type UpdateParent = Partial<CreateParent>
+export type UpdateParent = {
+  name?: string | undefined
+}
+
 
 export class ParentService {
   constructor(private db: Db, private parent: ParentTable) {
@@ -27,7 +30,7 @@ export class ParentService {
     return res
   }
 
-  async findMany({ page, perPage, paginate, name }: FindParentsSchema): Promise<PaginationServiceResponse<Parent>> {
+  async find({ page, perPage, paginate, name }: FindParentsSchema): Promise<PaginationServiceResponse<Parent>> {
     const filters: SQL[] = []
     if (name) filters.push(ilike(this.parent.name, `%${name}%`))
 
@@ -79,9 +82,9 @@ export class ParentService {
 
   }
 
-  async update(id: string, { name, memberId }: UpdateParent) {
+  async update(id: string, { name }: UpdateParent) {
     const [res] = await this.db.update(this.parent)
-      .set({ name, memberId })
+      .set({ name })
       .where(eq(this.parent.id, id))
       .returning()
 
@@ -90,15 +93,6 @@ export class ParentService {
     return res
   }
 
-  async delete(id: string) {
-    const [res] = await this.db.delete(this.parent)
-      .where(eq(this.parent.id, id))
-      .returning()
-
-    if (!res) throw new NotFoundError(`Parent ${id} not found`)
-
-    return res
-  }
 }
 
 

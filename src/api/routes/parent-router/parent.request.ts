@@ -9,6 +9,9 @@ export const createParentSchema = z.object({
 
 export type CreateParentSchema = z.infer<typeof createParentSchema>;
 
+export const updateParentSchema = createParentSchema.pick({ name: true }).partial();
+
+export type UpdateParentSchema = z.infer<typeof updateParentSchema>;
 
 export const findParentsSchema = paginationQuerySchema.extend({
   name: z.string().optional(),
