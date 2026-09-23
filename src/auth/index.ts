@@ -39,7 +39,9 @@ export const auth = betterAuth({
       },
     }),
     //@ts-expect-error
-    apiKey()
+    apiKey({
+      enableSessionForAPIKeys: true,
+    })
   ]
 });
 
