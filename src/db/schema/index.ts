@@ -1,5 +1,5 @@
 import { date, integer, json, pgEnum, pgTable, text, time, timestamp, unique, uuid, varchar } from "drizzle-orm/pg-core";
-import { account, invitation, member, organization, organizationRole, session, user, verification } from "./auth.schema";
+import { member, organization, user } from "./auth.schema";
 import { defineRelationsPart } from "drizzle-orm";
 
 export const parent = pgTable("parents", {
@@ -86,139 +86,135 @@ export const activity = pgTable("activities", {
 
 
 
-export const dbRelations = defineRelationsPart({ parent, child, childrenCentre, enrollment, attendance, attendanceLog, incident, incidentLog, member, user, session, account, verification, organization, organizationRole, invitation }, (r) => ({
+export const dbRelations = defineRelationsPart({ parent, child, childParent, childrenCentre, enrollment, staff, attendance, activity, member, organization, user }, (r) => ({
   parent: {
     member: r.one.member({
       from: r.parent.memberId,
       to: r.member.id,
+      optional: false,
+    }),
+    childParents: r.many.childParent({
+      from: r.parent.id,
+      to: r.childParent.parentId,
     }),
     children: r.many.child({
-      from: r.parent.id,
-      to: r.child.parentId,
-    })
+      from: r.parent.id.through(r.childParent.parentId),
+      to: r.child.id.through(r.childParent.childId),
+    }),
   },
   child: {
-    parent: r.one.parent({
-      from: r.child.parentId,
-      to: r.parent.id
+    childParents: r.many.childParent({
+      from: r.child.id,
+      to: r.childParent.childId,
+    }),
+    parents: r.many.parent({
+      from: r.child.id.through(r.childParent.childId),
+      to: r.parent.id.through(r.childParent.parentId),
     }),
     enrollments: r.many.enrollment({
       from: r.child.id,
-      to: r.enrollment.childId
-    })
+      to: r.enrollment.childId,
+    }),
+  },
+  childParent: {
+    child: r.one.child({
+      from: r.childParent.childId,
+      to: r.child.id,
+      optional: false,
+    }),
+    parent: r.one.parent({
+      from: r.childParent.parentId,
+      to: r.parent.id,
+      optional: false,
+    }),
   },
   childrenCentre: {
     enrollments: r.many.enrollment({
       from: r.childrenCentre.id,
-      to: r.enrollment.childrenCentreId
-    })
+      to: r.enrollment.childrenCentreId,
+    }),
+    staff: r.many.staff({
+      from: r.childrenCentre.id,
+      to: r.staff.childrenCentreId,
+    }),
   },
   enrollment: {
-    childrenCentre: r.one.childrenCentre({
-      from: r.enrollment.childrenCentreId,
-      to: r.childrenCentre.id
-    }),
     child: r.one.child({
       from: r.enrollment.childId,
-      to: r.child.id
+      to: r.child.id,
+      optional: false,
+    }),
+    childrenCentre: r.one.childrenCentre({
+      from: r.enrollment.childrenCentreId,
+      to: r.childrenCentre.id,
+      optional: false,
     }),
     attendances: r.many.attendance({
       from: r.enrollment.id,
-      to: r.attendance.enrollmentId
-    })
+      to: r.attendance.enrollmentId,
+    }),
+  },
+  staff: {
+    member: r.one.member({
+      from: r.staff.memberId,
+      to: r.member.id,
+      optional: false,
+    }),
+    childrenCentre: r.one.childrenCentre({
+      from: r.staff.childrenCentreId,
+      to: r.childrenCentre.id,
+      optional: false,
+    }),
+    checkIns: r.many.attendance({
+      from: r.staff.id,
+      to: r.attendance.checkedInStaffId,
+      alias: 'checked_in_staff',
+    }),
+    checkOuts: r.many.attendance({
+      from: r.staff.id,
+      to: r.attendance.checkedOutStaffId,
+      alias: 'checked_out_staff',
+    }),
+    activities: r.many.activity({
+      from: r.staff.id,
+      to: r.activity.staffId,
+    }),
   },
   attendance: {
     enrollment: r.one.enrollment({
       from: r.attendance.enrollmentId,
-      to: r.enrollment.id
+      to: r.enrollment.id,
+      optional: false,
     }),
-    member: r.one.member({
-      from: r.attendance.memberId,
-      to: r.member.id
+    checkedInBy: r.one.staff({
+      from: r.attendance.checkedInStaffId,
+      to: r.staff.id,
+      optional: false,
+      alias: 'checked_in_staff',
     }),
-    incidences: r.many.incident({
+    checkedOutBy: r.one.staff({
+      from: r.attendance.checkedOutStaffId,
+      to: r.staff.id,
+      alias: 'checked_out_staff',
+    }),
+    activities: r.many.activity({
       from: r.attendance.id,
-      to: r.incident.attendanceId,
-    }),
-    attendanceLogs: r.many.attendanceLog({
-      from: r.attendance.id,
-      to: r.attendanceLog.attendanceId,
+      to: r.activity.attendanceId,
     }),
   },
-  attendanceLog: {
+  activity: {
+    staff: r.one.staff({
+      from: r.activity.staffId,
+      to: r.staff.id,
+      optional: false,
+    }),
     attendance: r.one.attendance({
-      from: r.attendanceLog.attendanceId,
-      to: r.attendance.id
+      from: r.activity.attendanceId,
+      to: r.attendance.id,
+      optional: false,
     }),
   },
-  incident: {
-    attendance: r.one.attendance({
-      from: r.incident.attendanceId,
-      to: r.attendance.id
-    }),
-    incedentLogs: r.many.incidentLog({
-      from: r.incident.id,
-      to: r.incidentLog.incidentId,
-    }),
-  },
-  incidentLog: {
-    incident: r.one.incident({
-      from: r.incidentLog.incidentId,
-      to: r.incident.id
-    }),
-  },
-
-  // auth
-  user: {
-    sessions: r.many.session({
-      from: r.user.id,
-      to: r.session.userId,
-    }),
-    accounts: r.many.account({
-      from: r.user.id,
-      to: r.account.userId,
-    }),
-    members: r.many.member({
-      from: r.user.id,
-      to: r.member.userId,
-    }),
-    invitations: r.many.invitation({
-      from: r.user.id,
-      to: r.invitation.inviterId,
-    })
-  },
-  session: {
-    user: r.one.user({
-      from: r.session.userId,
-      to: r.user.id,
-    })
-  },
-  account: {
-    user: r.one.user({
-      from: r.account.userId,
-      to: r.user.id,
-    })
-  },
-  organization: {
-    organizationRoles: r.many.organizationRole({
-      from: r.organization.id,
-      to: r.organizationRole.organizationId,
-    }),
-    members: r.many.member({
-      from: r.organization.id,
-      to: r.member.organizationId,
-    }),
-    invitations: r.many.invitation({
-      from: r.organization.id,
-      to: r.invitation.organizationId,
-    })
-  },
-  organizationRole: {
-    organization: r.one.organization({
-      from: r.organizationRole.organizationId,
-      to: r.organization.id,
-    })
-  },
+  // Spreading parts replaces whole table entries, so member's auth relations are repeated here
   member: {
     organization: r.one.organization({
       from: r.member.organizationId,
@@ -230,21 +226,11 @@ export const dbRelations = defineRelationsPart({ parent, child, childrenCentre, 
     }),
     parent: r.one.parent({
       from: r.member.id,
-      to: r.parent.memberId
+      to: r.parent.memberId,
     }),
-    attendances: r.many.attendance({
+    staff: r.one.staff({
       from: r.member.id,
-      to: r.attendance.memberId,
-    })
-  },
-  invitation: {
-    organization: r.one.organization({
-      from: r.invitation.organizationId,
-      to: r.organization.id,
+      to: r.staff.memberId,
     }),
-    user: r.one.user({
-      from: r.invitation.inviterId,
-      to: r.user.id,
-    })
-  }
+  },
 }));
