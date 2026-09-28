@@ -9,11 +9,15 @@ export type Parent = ParentTable["$inferSelect"]
 
 export interface CreateParent {
   name: string
+  phoneNumber :string
   memberId: string
 }
 
 export type UpdateParent = {
   name?: string | undefined
+  phoneNumber?: string | undefined
+  address?: string | undefined
+  emergencyContact?: string | undefined
 }
 
 
@@ -21,10 +25,11 @@ export class ParentService {
   constructor(private db: Db, private parent: ParentTable) {
   }
 
-  async create({ name, memberId }: CreateParent) {
+  async create({ name, memberId,phoneNumber }: CreateParent) {
     const [res] = await this.db.insert(this.parent).values({
       name,
-      memberId
+      memberId,
+      phoneNumber
     }).returning()
 
     return res
@@ -82,9 +87,14 @@ export class ParentService {
 
   }
 
-  async update(id: string, { name }: UpdateParent) {
+  async update(id: string, { name,address,emergencyContact,phoneNumber }: UpdateParent) {
     const [res] = await this.db.update(this.parent)
-      .set({ name })
+      .set({
+        name,
+        address,
+        emergencyContact,
+        phoneNumber
+      })
       .where(eq(this.parent.id, id))
       .returning()
 

@@ -9,7 +9,7 @@ export const parent = pgTable("parents", {
   }).unique(),
   name: text('name').notNull(),
   email: text('email').notNull().default(""),
-  phoneNumber: text('phoneNumber').notNull().default(""),
+  phoneNumber: text('phoneNumber').notNull(),
   address: text('address').default(""),
   emergencyContact: text('emergencyContact').default(""),
 });
