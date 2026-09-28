@@ -41,7 +41,6 @@ export const auth = betterAuth({
         enabled: true,
       },
     }),
-    //@ts-expect-error
     apiKey({
       enableSessionForAPIKeys: true,
     })
@@ -57,7 +56,7 @@ export const auth = betterAuth({
         const member = await auth.api.addMember({
           body: {
             userId: user.id,
-            role: ["parent"],
+            role: ["parent"] as any[],
             organizationId: ORGANIZATION_ID,
           },
         });

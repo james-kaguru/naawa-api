@@ -1,2 +1,5 @@
 onlyBuiltDependencies:
   - esbuild
+
+overrides:
+  "@better-auth/utils": "0.4.2"
