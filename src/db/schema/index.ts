@@ -1,13 +1,15 @@
-import { date, integer, json, pgEnum, pgTable, text, time, timestamp, uuid, varchar } from "drizzle-orm/pg-core";
+import { date, integer, json, pgEnum, pgTable, text, time, timestamp, unique, uuid, varchar } from "drizzle-orm/pg-core";
 import { account, invitation, member, organization, organizationRole, session, user, verification } from "./auth.schema";
 import { defineRelationsPart } from "drizzle-orm";
 
 export const parent = pgTable("parents", {
   id: uuid().primaryKey().defaultRandom(),
-  memberId: text('member_id').notNull().references(() => member.id),
+  memberId: text('member_id').notNull().references(() => member.id, {
+     onDelete: 'restrict'
+  }).unique(),
   name: text('name').notNull(),
   email: text('name').notNull().default(""),
-  phoneNumber: text('name').notNull().default(""),
+  phoneNumber: text('phoneNumber').notNull().default(""),
   address: text('address').default(""),
   emergencyContact: text('emergencyContact').default(""),
 });
@@ -25,10 +27,14 @@ export const child = pgTable("children", {
 
 export const childParent = pgTable("child_parents", {
   id: uuid().primaryKey().defaultRandom(),
-  childId: uuid('child_id').notNull().references(() => child.id),
-  parentId: uuid('parent_id').notNull().references(() => parent.id),
-  timestamp: time().defaultNow()
-});
+  childId: uuid('child_id').notNull().references(() => child.id, { onDelete: 'restrict' }),
+  parentId: uuid('parent_id').notNull().references(() => parent.id, { onDelete: 'restrict' }),
+  timestamp: time().defaultNow(),
+},
+(t) => [
+  unique('child_parents_child_id_parent_id_unique').on(t.childId,t.parentId)
+]
+);
 
 export const childrenCentre = pgTable("children_centres", {
   id: uuid().primaryKey().defaultRandom(),
@@ -40,26 +46,26 @@ export const enrollmentStatus = pgEnum('enrollment_status', ['active', 'inactive
 
 export const enrollment = pgTable("enrollments", {
   id: uuid().primaryKey().defaultRandom(),
-  childId: uuid('child_id').notNull().references(() => child.id,),
-  childrenCentreId: uuid('child_center_id').notNull().references(() => childrenCentre.id,),
+  childId: uuid('child_id').notNull().references(() => child.id, { onDelete: 'restrict' }),
+  childrenCentreId: uuid('child_center_id').notNull().references(() => childrenCentre.id, { onDelete: 'restrict' }),
   status: enrollmentStatus().notNull(),
   startDate: date().notNull(),
 });
 
 export const staff = pgTable("staff", {
   id: uuid().primaryKey().defaultRandom(),
-  memberId: text('member_id').notNull().references(() => member.id,),
-  childrenCentreId: uuid('child_center_id').notNull().references(() => childrenCentre.id,),
-  timestamp: time().defaultNow()
+  memberId: text('member_id').notNull().references(() => member.id, { onDelete: 'restrict' }).unique(),
+  childrenCentreId: uuid('child_center_id').notNull().references(() => childrenCentre.id, { onDelete: 'restrict' }),
+  timestamp: timestamp().defaultNow()
 });
 
 export const attendanceStatus = pgEnum('attendance_status', ['checkedIn', 'checkedOut']);
 
 export const attendance = pgTable("attendances", {
   id: uuid().primaryKey().defaultRandom(),
-  enrollmentId: uuid('enrollment_id').notNull().references(() => enrollment.id),
-  checkedInStaffId: uuid('checked_in_staff_id').notNull().references(() => staff.id),
-  checkedOutStaffId: uuid('checked_out_staff_id').notNull().references(() => staff.id),
+  enrollmentId: uuid('enrollment_id').notNull().references(() => enrollment.id, { onDelete: 'restrict' }),
+  checkedInStaffId: uuid('checked_in_staff_id').notNull().references(() => staff.id, { onDelete: 'restrict' }),
+  checkedOutStaffId: uuid('checked_out_staff_id').references(() => staff.id, { onDelete: 'restrict' }),
   status: attendanceStatus().notNull(),
   checkedInAt: timestamp().defaultNow(),
   checkedOutAt: timestamp(),
@@ -69,12 +75,13 @@ export const activityType = pgEnum('activity_type', ['meal', 'nap','incident','p
 
 export const activity = pgTable("activities", {
   id: uuid().primaryKey().defaultRandom(),
-  staffId: uuid('staff_id').notNull().references(() => staff.id),
-  attendanceId: uuid('attendance_id').notNull().references(() => attendance.id),
+  staffId: uuid('staff_id').notNull().references(() => staff.id, { onDelete: 'restrict' }),
+  attendanceId: uuid('attendance_id').notNull().references(() => attendance.id, { onDelete: 'restrict' }),
+  type: activityType().notNull(),
   description: text().notNull().default(""),
   details: json().notNull().default({}),
   createdAt: timestamp().defaultNow(),
-  updatedAt: timestamp().$onUpdate(() => new Date()),
+  updatedAt: timestamp().defaultNow().$onUpdate(() => new Date()),
 });
 
 
