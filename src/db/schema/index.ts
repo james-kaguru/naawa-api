@@ -1,4 +1,4 @@
-import { date, integer, json, pgEnum, pgTable, text, time, timestamp, unique, uuid, varchar } from "drizzle-orm/pg-core";
+import { date, integer, json, pgEnum, pgTable, text, timestamp, unique, uuid, varchar } from "drizzle-orm/pg-core";
 import { member, organization, user } from "./auth.schema";
 import { defineRelationsPart } from "drizzle-orm";
 
@@ -8,7 +8,7 @@ export const parent = pgTable("parents", {
      onDelete: 'restrict'
   }).unique(),
   name: text('name').notNull(),
-  email: text('name').notNull().default(""),
+  email: text('email').notNull().default(""),
   phoneNumber: text('phoneNumber').notNull().default(""),
   address: text('address').default(""),
   emergencyContact: text('emergencyContact').default(""),
@@ -29,7 +29,7 @@ export const childParent = pgTable("child_parents", {
   id: uuid().primaryKey().defaultRandom(),
   childId: uuid('child_id').notNull().references(() => child.id, { onDelete: 'restrict' }),
   parentId: uuid('parent_id').notNull().references(() => parent.id, { onDelete: 'restrict' }),
-  timestamp: time().defaultNow(),
+  timestamp: timestamp().defaultNow(),
 },
 (t) => [
   unique('child_parents_child_id_parent_id_unique').on(t.childId,t.parentId)
@@ -40,6 +40,7 @@ export const childrenCentre = pgTable("children_centres", {
   id: uuid().primaryKey().defaultRandom(),
   name: text('name').notNull(),
   location: text('location').notNull(),
+  organizationId: text('organization_id').notNull().references(() => organization.id, { onDelete: 'restrict' }).unique(),
 });
 
 export const enrollmentStatus = pgEnum('enrollment_status', ['active', 'inactive']);
@@ -129,6 +130,11 @@ export const dbRelations = defineRelationsPart({ parent, child, childParent, chi
     }),
   },
   childrenCentre: {
+    organization: r.one.organization({
+      from: r.childrenCentre.organizationId,
+      to: r.organization.id,
+      optional: false,
+    }),
     enrollments: r.many.enrollment({
       from: r.childrenCentre.id,
       to: r.enrollment.childrenCentreId,
