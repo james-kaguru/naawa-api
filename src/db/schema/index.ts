@@ -1,4 +1,4 @@
-import { date, integer, pgEnum, pgTable, text, timestamp, uuid, varchar } from "drizzle-orm/pg-core";
+import { date, integer, json, pgEnum, pgTable, text, time, timestamp, uuid, varchar } from "drizzle-orm/pg-core";
 import { account, invitation, member, organization, organizationRole, session, user, verification } from "./auth.schema";
 import { defineRelationsPart } from "drizzle-orm";
 
@@ -6,14 +6,28 @@ export const parent = pgTable("parents", {
   id: uuid().primaryKey().defaultRandom(),
   memberId: text('member_id').notNull().references(() => member.id),
   name: text('name').notNull(),
+  email: text('name').notNull().default(""),
+  phoneNumber: text('name').notNull().default(""),
+  address: text('address').default(""),
+  emergencyContact: text('emergencyContact').default(""),
 });
 
 export type ParentTable = typeof parent;
 
 export const child = pgTable("children", {
   id: uuid().primaryKey().defaultRandom(),
-  parentId: uuid('parent_id').notNull().references(() => parent.id,),
   name: text('name').notNull(),
+  dateOfBirth: date().notNull(),
+  allergies: text('allergies').default(""),
+  specialInstructions: text('specialInstructions').default(""),
+  medicalNotes: text('medicalNotes').default(""),
+});
+
+export const childParent = pgTable("child_parents", {
+  id: uuid().primaryKey().defaultRandom(),
+  childId: uuid('child_id').notNull().references(() => child.id),
+  parentId: uuid('parent_id').notNull().references(() => parent.id),
+  timestamp: time().defaultNow()
 });
 
 export const childrenCentre = pgTable("children_centres", {
@@ -22,7 +36,7 @@ export const childrenCentre = pgTable("children_centres", {
   location: text('location').notNull(),
 });
 
-export const enrollmentStatus = pgEnum('enrollment_status', ['enrolled', 'archived']);
+export const enrollmentStatus = pgEnum('enrollment_status', ['active', 'inactive']);
 
 export const enrollment = pgTable("enrollments", {
   id: uuid().primaryKey().defaultRandom(),
@@ -30,7 +44,13 @@ export const enrollment = pgTable("enrollments", {
   childrenCentreId: uuid('child_center_id').notNull().references(() => childrenCentre.id,),
   status: enrollmentStatus().notNull(),
   startDate: date().notNull(),
-  endDate: date(),
+});
+
+export const staff = pgTable("staff", {
+  id: uuid().primaryKey().defaultRandom(),
+  memberId: text('member_id').notNull().references(() => member.id,),
+  childrenCentreId: uuid('child_center_id').notNull().references(() => childrenCentre.id,),
+  timestamp: time().defaultNow()
 });
 
 export const attendanceStatus = pgEnum('attendance_status', ['checkedIn', 'checkedOut']);
@@ -38,37 +58,26 @@ export const attendanceStatus = pgEnum('attendance_status', ['checkedIn', 'check
 export const attendance = pgTable("attendances", {
   id: uuid().primaryKey().defaultRandom(),
   enrollmentId: uuid('enrollment_id').notNull().references(() => enrollment.id),
-  memberId: text('member_id').notNull().references(() => member.id),
+  checkedInStaffId: uuid('checked_in_staff_id').notNull().references(() => staff.id),
+  checkedOutStaffId: uuid('checked_out_staff_id').notNull().references(() => staff.id),
   status: attendanceStatus().notNull(),
-  signedInAt: timestamp().defaultNow(),
-  signedOutAt: timestamp(),
+  checkedInAt: timestamp().defaultNow(),
+  checkedOutAt: timestamp(),
 });
 
-export const attendanceLogAction = pgEnum('attendance_log_action', ['checkIn', 'checkOut']);
+export const activityType = pgEnum('activity_type', ['meal', 'nap','incident','play','note']);
 
-export const attendanceLog = pgTable("attendance_logs", {
+export const activity = pgTable("activities", {
   id: uuid().primaryKey().defaultRandom(),
+  staffId: uuid('staff_id').notNull().references(() => staff.id),
   attendanceId: uuid('attendance_id').notNull().references(() => attendance.id),
-  action: attendanceLogAction().notNull(),
+  description: text().notNull().default(""),
+  details: json().notNull().default({}),
   createdAt: timestamp().defaultNow(),
+  updatedAt: timestamp().$onUpdate(() => new Date()),
 });
 
-export const incident = pgTable("incidences", {
-  id: uuid().primaryKey().defaultRandom(),
-  attendanceId: uuid('attendance_id').notNull().references(() => attendance.id),
-  memberId: text('member_id').notNull().references(() => member.id),
-  description: text('description').notNull(),
-  createdAt: timestamp().defaultNow(),
-  updatedAt: timestamp().defaultNow().$onUpdate(() => new Date()),
-});
 
-export const incidentLog = pgTable("incident_logs", {
-  id: uuid().primaryKey().defaultRandom(),
-  incidentId: uuid('incident_id').notNull().references(() => incident.id),
-  details: text('details').notNull(),
-  createdAt: timestamp().defaultNow(),
-  updatedAt: timestamp().defaultNow().$onUpdate(() => new Date()),
-});
 
 export const dbRelations = defineRelationsPart({ parent, child, childrenCentre, enrollment, attendance, attendanceLog, incident, incidentLog, member, user, session, account, verification, organization, organizationRole, invitation }, (r) => ({
   parent: {
