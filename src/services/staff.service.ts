@@ -5,7 +5,7 @@ import { member, user } from "@/db/schema/auth.schema"
 import NotFoundError from "@/common/errors/not-found.error"
 import BadRequestError from "@/common/errors/bad-request.error"
 import type { PaginationServiceResponse, Staff } from "@/common/types"
-import type { PaginationQuery } from "@/api/schemas"
+import type { FindStaffSchema } from "@/api/routes/staff-router"
 
 export interface CreateStaff {
   memberId: string
@@ -13,12 +13,11 @@ export interface CreateStaff {
 }
 
 export type UpdateStaff = {
-  childrenCentreId?: string | undefined
+  childrenCentreId: string
 }
 
-export type FindStaff = PaginationQuery & {
-  childrenCentreId?: string | undefined
-  name?: string | undefined
+export type FindStaff = FindStaffSchema & {
+  childrenCentreId: string
 }
 
 
@@ -53,7 +52,7 @@ export class StaffService {
       childrenCentreId,
     }).returning({ id: this.staff.id })
 
-    return this.findOne(res!.id)
+    return this.findOne(res!.id, childrenCentreId)
   }
 
   async find({ page, perPage, paginate, childrenCentreId, name }: FindStaff): Promise<PaginationServiceResponse<Staff>> {
@@ -93,9 +92,9 @@ export class StaffService {
     }
   }
 
-  async findOne(id: string): Promise<Staff> {
+  async findOne(id: string, childrenCentreId: string): Promise<Staff> {
     const [res] = await this.select()
-      .where(eq(this.staff.id, id))
+      .where(and(eq(this.staff.id, id), eq(this.staff.childrenCentreId, childrenCentreId)))
       .limit(1)
 
     if (!res) throw new NotFoundError(`Staff ${id} not found`)
@@ -112,20 +111,6 @@ export class StaffService {
 
     return res
   }
-
-  async update(id: string, { childrenCentreId }: UpdateStaff): Promise<Staff> {
-    const [res] = await this.db.update(this.staff)
-      .set({
-        childrenCentreId
-      })
-      .where(eq(this.staff.id, id))
-      .returning({ id: this.staff.id })
-
-    if (!res) throw new NotFoundError(`Staff ${id} not found`)
-
-    return this.findOne(res.id)
-  }
-
 }
 
 
