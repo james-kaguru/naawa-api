@@ -102,9 +102,9 @@ export class StaffService {
     return res
   }
 
-  async findByMemberId(memberId: string): Promise<Staff> {
+  async findByMemberId(memberId: string, childrenCentreId: string): Promise<Staff> {
     const [res] = await this.select()
-      .where(eq(this.staff.memberId, memberId))
+      .where(and(eq(this.staff.memberId, memberId), eq(this.staff.childrenCentreId, childrenCentreId)))
       .limit(1)
 
     if (!res) throw new NotFoundError(`Staff with memberId ${memberId} not found`)

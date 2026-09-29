@@ -6,7 +6,7 @@ import { member, user } from "@/db/schema/auth.schema"
 import NotFoundError from "@/common/errors/not-found.error"
 import BadRequestError from "@/common/errors/bad-request.error"
 import type { Attendance, PaginationServiceResponse } from "@/common/types"
-import type { PaginationQuery } from "@/api/schemas"
+import type { FindAttendancesSchema } from "@/api/routes/attendance-router"
 
 export interface CheckIn {
   enrollmentId: string
@@ -17,11 +17,8 @@ export interface CheckOut {
   staffId: string
 }
 
-export type FindAttendances = PaginationQuery & {
+export type FindAttendances = FindAttendancesSchema & {
   childrenCentreId: string
-  childId?: string | undefined
-  status?: Attendance["status"] | undefined
-  date?: string | undefined
 }
 
 const checkedInStaff = alias(staff, "checked_in_staff")
@@ -82,7 +79,7 @@ export class AttendanceService {
     }
   }
 
-  private filters({ childrenCentreId, childId, status, date }: Omit<FindAttendances, keyof PaginationQuery>) {
+  private filters({ childrenCentreId, childId, status, date }: Pick<FindAttendances, "childrenCentreId" | "childId" | "status" | "date">) {
     const filters: SQL[] = [eq(enrollment.childrenCentreId, childrenCentreId)]
     if (childId) filters.push(eq(enrollment.childId, childId))
     if (status) filters.push(eq(this.attendance.status, status))
