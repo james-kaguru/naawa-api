@@ -1,7 +1,7 @@
 import { HttpStatus } from "@/common/enums";
-import { BaseError } from "@/common/errors";
+import { BaseError } from "./base.error";
 
-export default class UnauthorizedError extends BaseError {
+export class UnauthorizedError extends BaseError {
   public constructor(public message: string) {
     super('UnauthorizedError', HttpStatus.UNAUTHORIZED, message);
   }

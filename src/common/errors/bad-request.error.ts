@@ -1,7 +1,7 @@
 import { HttpStatus } from "@/common/enums";
-import { BaseError } from "@/common/errors";
+import { BaseError } from "./base.error";
 
-export default class BadRequestError extends BaseError {
+export class BadRequestError extends BaseError {
   public constructor(public message: string) {
     super('BadRequestError', HttpStatus.BAD_REQUEST, message);
   }

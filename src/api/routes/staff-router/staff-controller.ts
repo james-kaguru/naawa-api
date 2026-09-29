@@ -5,7 +5,7 @@ import { childrenCentreService, staffService, type ChildrenCentreService, type S
 import { auth } from "@/auth";
 import { ORGANIZATION_ID } from "@/common/constants";
 import { fromNodeHeaders } from "better-auth/node";
-import NotFoundError from "@/common/errors/not-found.error";
+import { NotFoundError } from "@/common/errors";
 
 class StaffController {
   constructor(private staffService: StaffService, private childrenCentreService: ChildrenCentreService) {

@@ -1,5 +1,4 @@
-import { BaseError } from "@/common/errors/base.error";
-import ValidationError from "@/common/errors/validation.error";
+import { ValidationError, BaseError } from "@/common/errors";
 import type { Req, Res } from "@/common/types";
 import type { NextFunction } from "express";
 import { isAPIError } from "better-auth/api";

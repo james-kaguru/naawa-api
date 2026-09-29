@@ -7,7 +7,7 @@ import { parentService, type ParentService } from "@/services";
 import { auth } from "@/auth";
 import { ORGANIZATION_ID } from "@/common/constants";
 import { fromNodeHeaders } from "better-auth/node";
-import BadRequestError from "@/common/errors/bad-request.error.ts";
+import { BadRequestError } from "@/common/errors";
 
 class ParentController {
   constructor(private parentService: ParentService) {

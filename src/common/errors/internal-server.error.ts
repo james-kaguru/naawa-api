@@ -1,7 +1,7 @@
 import { HttpStatus } from "@/common/enums";
-import { BaseError } from "@/common/errors";
+import { BaseError } from "./base.error";
 
-export default class InternalServerError extends BaseError {
+export class InternalServerError extends BaseError {
   public constructor(public message: string) {
     super('InternalServerError', HttpStatus.INTERNAL_SERVER, message);
   }

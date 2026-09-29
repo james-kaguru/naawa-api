@@ -1,6 +1,6 @@
 import type { NextFunction, Request, Response } from "express";
 import z from "zod";
-import ValidationError, { type ValidationErrors } from "@/common/errors/validation.error";
+import { ValidationError, type ValidationErrors } from "@/common/errors";
 
 type Schemas = {
   body?: z.ZodType;

@@ -1,7 +1,7 @@
 import { and, asc, eq, ilike, type SQL } from "drizzle-orm"
 import { db, type Db } from "@/db"
 import { parent, type ParentTable } from "@/db/schema"
-import NotFoundError from "@/common/errors/not-found.error"
+import { NotFoundError } from "@/common/errors"
 import type { PaginationServiceResponse, Parent } from "@/common/types"
 import type { FindParentsSchema } from "@/api/routes/parent-router"
 

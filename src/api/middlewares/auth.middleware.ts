@@ -3,9 +3,7 @@ import { fromNodeHeaders } from "better-auth/node";
 import { auth } from "../../auth/index.ts";
 import { staffService } from "@/services";
 import { ORGANIZATION_ID } from "@/common/constants";
-import NotFoundError from "@/common/errors/not-found.error";
-import ForbiddenError from "@/common/errors/forbidden.error";
-import UnauthorizedError from "@/common/errors/unauthorized";
+import { NotFoundError, ForbiddenError, UnauthorizedError } from "@/common/errors";
 
 type Session = typeof auth.$Infer.Session & {
   staffId?: string;
