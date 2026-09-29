@@ -90,16 +90,20 @@ export type AttendanceTable = typeof attendance;
 
 export const activityType = pgEnum('activity_type', ['meal', 'nap','incident','play','note']);
 
+export type ActivityType = (typeof activityType.enumValues)[number];
+
 export const activity = pgTable("activities", {
   id: uuid().primaryKey().defaultRandom(),
   staffId: uuid('staff_id').notNull().references(() => staff.id, { onDelete: 'restrict' }),
   attendanceId: uuid('attendance_id').notNull().references(() => attendance.id, { onDelete: 'restrict' }),
   type: activityType().notNull(),
   description: text().notNull().default(""),
-  details: json().notNull().default({}),
+  details: json().$type<Record<string, unknown>>().notNull().default({}),
   createdAt: timestamp().defaultNow().notNull(),
   updatedAt: timestamp().defaultNow().$onUpdate(() => new Date()).notNull(),
 });
+
+export type ActivityTable = typeof activity;
 
 
 
