@@ -1,7 +1,8 @@
 import { paginationQuerySchema } from "@/api/schemas";
 import { z } from "zod";
+import { enrollmentStatus } from "@/db/schema";
 
-const enrollmentStatusSchema = z.enum(["active", "inactive"]);
+const enrollmentStatusSchema = z.enum(enrollmentStatus.enumValues);
 
 export const childrenCentreEnrollmentsParamsSchema = z.object({
   childrenCentreId: z.uuid(),

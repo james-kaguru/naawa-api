@@ -51,6 +51,8 @@ export type ChildrenCentreTable = typeof childrenCentre;
 
 export const enrollmentStatus = pgEnum('enrollment_status', ['active', 'inactive']);
 
+export type EnrollmentStatus = (typeof enrollmentStatus.enumValues)[number];
+
 export const enrollment = pgTable("enrollments", {
   id: uuid().primaryKey().defaultRandom(),
   childId: uuid('child_id').notNull().references(() => child.id, { onDelete: 'restrict' }),

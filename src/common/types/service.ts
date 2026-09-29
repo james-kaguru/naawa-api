@@ -1,3 +1,5 @@
+import type { EnrollmentStatus } from "@/db/schema";
+
 export interface Parent {
     id: string;
     name: string;
@@ -23,7 +25,7 @@ export type PlainChild = Omit<Child,"parents">
 export interface Enrollment {
   id: string;
   child: PlainChild;
-  status: "active" | "inactive";
+  status: EnrollmentStatus;
   startDate: string;
 }
 
