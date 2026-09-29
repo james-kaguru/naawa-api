@@ -59,6 +59,8 @@ export const enrollment = pgTable("enrollments", {
   startDate: date().notNull(),
 });
 
+export type EnrollmentTable = typeof enrollment;
+
 export const staff = pgTable("staff", {
   id: uuid().primaryKey().defaultRandom(),
   memberId: text('member_id').notNull().references(() => member.id, { onDelete: 'restrict' }).unique(),

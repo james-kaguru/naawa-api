@@ -18,6 +18,13 @@ export interface Child {
   parents:Parent[]
 }
 
+export interface Enrollment {
+  id: string;
+  child: Child;
+  status: "active" | "inactive";
+  startDate: string;
+}
+
 export interface ChildrenCentre {
     name: string;
     id: string;

@@ -4,6 +4,7 @@ import { child, childParent, type ChildParentTable, type ChildTable } from "@/db
 import NotFoundError from "@/common/errors/not-found.error"
 import type { Child, PaginationServiceResponse } from "@/common/types"
 import type { FindChildrenSchema } from "@/api/routes/child-router"
+import { childColumns, childWith } from "./columns"
 
 export interface CreateChild {
   parentId: string
@@ -24,33 +25,9 @@ export class ChildService {
   constructor(private db: Db, private child: ChildTable, private childParent: ChildParentTable) {
   }
 
-  private readonly columns = {
-    id: true,
-    name: true,
-    dateOfBirth: true,
-    allergies: true,
-    specialInstructions: true,
-    medicalNotes: true,
-  } as const
+  private readonly columns = childColumns
 
-  private readonly parentColumns = {
-    id: true,
-    name: true,
-    email: true,
-    memberId: true,
-    phoneNumber: true,
-    address: true,
-    emergencyContact: true,
-  } as const
-
-  private get with() {
-    return {
-      parents: {
-        columns: this.parentColumns,
-        orderBy: { name: "asc" },
-      },
-    } as const
-  }
+  private readonly with = childWith
 
   private filters(table: ChildTable, { name, parentId }: Pick<FindChildrenSchema, "name" | "parentId">) {
     const filters: SQL[] = []
