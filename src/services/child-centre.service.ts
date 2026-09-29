@@ -4,10 +4,8 @@ import { childrenCentre, type ChildrenCentreTable } from "@/db/schema"
 import NotFoundError from "@/common/errors/not-found.error"
 import BadRequestError from "@/common/errors/bad-request.error"
 import type { ChildrenCentre, PaginationServiceResponse } from "@/common/types"
-import type { PaginationQuery } from "@/api/schemas"
+import type { FindChildrenCentresSchema } from "@/api/routes/children-centre-router"
 import { ORGANIZATION_ID } from "@/common/constants"
-
-
 
 export interface CreateChildrenCentre {
   name: string
@@ -15,11 +13,6 @@ export interface CreateChildrenCentre {
 }
 
 export type UpdateChildrenCentre = {
-  name?: string | undefined
-  location?: string | undefined
-}
-
-export type FindChildrenCentres = PaginationQuery & {
   name?: string | undefined
   location?: string | undefined
 }
@@ -54,7 +47,7 @@ export class ChildrenCentreService {
     return res!
   }
 
-  async find({ page, perPage, paginate, name, location }: FindChildrenCentres): Promise<PaginationServiceResponse<ChildrenCentre>> {
+  async find({ page, perPage, paginate, name, location }: FindChildrenCentresSchema): Promise<PaginationServiceResponse<ChildrenCentre>> {
     const filters: SQL[] = []
     if (name) filters.push(ilike(this.childrenCentre.name, `%${name}%`))
     if (location) filters.push(ilike(this.childrenCentre.location, `%${location}%`))
