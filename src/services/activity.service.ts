@@ -4,7 +4,7 @@ import { activity, attendance, enrollment, staff, type ActivityTable } from "@/d
 import { member, user } from "@/db/schema/auth.schema"
 import { NotFoundError } from "@/common/errors"
 import type { Activity, PaginationServiceResponse } from "@/common/types"
-import type { PaginationQuery } from "@/api/schemas"
+import type { FindActivitiesSchema } from "@/api/routes/activity-router"
 
 export interface CreateActivity {
   attendanceId: string
@@ -20,12 +20,8 @@ export type UpdateActivity = {
   details?: Record<string, unknown> | undefined
 }
 
-export type FindActivities = PaginationQuery & {
+export type FindActivities = FindActivitiesSchema & {
   childrenCentreId: string
-  attendanceId?: string | undefined
-  childId?: string | undefined
-  type?: Activity["type"] | undefined
-  date?: string | undefined
 }
 
 

@@ -170,6 +170,20 @@ export class AttendanceService {
     return this.toAttendance(res)
   }
 
+  async findOpenByChildId(childId: string, childrenCentreId: string): Promise<Attendance> {
+    const [res] = await this.select()
+      .where(and(
+        eq(enrollment.childId, childId),
+        eq(enrollment.childrenCentreId, childrenCentreId),
+        eq(this.attendance.status, "checkedIn"),
+      ))
+      .limit(1)
+
+    if (!res) throw new BadRequestError(`Child ${childId} is not checked in at children centre ${childrenCentreId}`)
+
+    return this.toAttendance(res)
+  }
+
 }
 
 
