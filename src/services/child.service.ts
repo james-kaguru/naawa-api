@@ -3,7 +3,7 @@ import { db, type Db } from "@/db"
 import { child, childParent, type ChildParentTable, type ChildTable } from "@/db/schema"
 import NotFoundError from "@/common/errors/not-found.error"
 import type { PaginationServiceResponse } from "@/common/types"
-import type { PaginationQuery } from "@/api/schemas"
+import type { FindChildrenSchema } from "@/api/routes/child-router"
 
 export type Child = ChildTable["$inferSelect"]
 
@@ -19,11 +19,6 @@ export type UpdateChild = {
   allergies?: string | undefined
   specialInstructions?: string | undefined
   medicalNotes?: string | undefined
-}
-
-export type FindChildren = PaginationQuery & {
-  name?: string | undefined
-  parentId?: string | undefined
 }
 
 
@@ -47,7 +42,7 @@ export class ChildService {
     })
   }
 
-  async find({ page, perPage, paginate, name, parentId }: FindChildren): Promise<PaginationServiceResponse<Child>> {
+  async find({ page, perPage, paginate, name, parentId }: FindChildrenSchema): Promise<PaginationServiceResponse<Child>> {
     const filters: SQL[] = []
     if (name) filters.push(ilike(this.child.name, `%${name}%`))
     if (parentId) {
