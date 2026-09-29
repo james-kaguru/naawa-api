@@ -70,6 +70,8 @@ export const staff = pgTable("staff", {
   timestamp: timestamp().defaultNow()
 });
 
+export type StaffTable = typeof staff;
+
 export const attendanceStatus = pgEnum('attendance_status', ['checkedIn', 'checkedOut']);
 
 export const attendance = pgTable("attendances", {

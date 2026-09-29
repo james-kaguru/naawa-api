@@ -29,6 +29,11 @@ export interface Enrollment {
   startDate: string;
 }
 
+export interface Staff {
+  id: string;
+  name: string;
+}
+
 export interface ChildrenCentre {
     name: string;
     id: string;
