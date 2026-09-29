@@ -1,18 +1,17 @@
-import { and, asc, eq, ilike, type SQL } from "drizzle-orm"
+import { and, asc, count, eq, ilike, type SQL } from "drizzle-orm"
 import { db, type Db } from "@/db"
 import { parent, type ParentTable } from "@/db/schema"
+import { member, user } from "@/db/schema/auth.schema"
 import { NotFoundError } from "@/common/errors"
 import type { PaginationServiceResponse, Parent } from "@/common/types"
 import type { FindParentsSchema } from "@/api/routes/parent-router"
 
 export interface CreateParent {
-  name: string
   phoneNumber :string
   memberId: string
 }
 
 export type UpdateParent = {
-  name?: string | undefined
   phoneNumber?: string | undefined
   address?: string | undefined
   emergencyContact?: string | undefined
@@ -26,8 +25,8 @@ export class ParentService {
   private get columns() {
     return {
       id: this.parent.id,
-      name: this.parent.name,
-      email: this.parent.email,
+      name: user.name,
+      email: user.email,
       memberId: this.parent.memberId,
       phoneNumber: this.parent.phoneNumber,
       address: this.parent.address,
@@ -35,26 +34,31 @@ export class ParentService {
     }
   }
 
-  async create({ name, memberId,phoneNumber }: CreateParent): Promise<Parent> {
+  private select() {
+    return this.db.select(this.columns)
+      .from(this.parent)
+      .innerJoin(member, eq(member.id, this.parent.memberId))
+      .innerJoin(user, eq(user.id, member.userId))
+  }
+
+  async create({ memberId, phoneNumber }: CreateParent): Promise<Parent> {
     const [res] = await this.db.insert(this.parent).values({
-      name,
       memberId,
       phoneNumber
-    }).returning(this.columns)
+    }).returning({ id: this.parent.id })
 
-    return res!
+    return this.findOne(res!.id)
   }
 
   async find({ page, perPage, paginate, name }: FindParentsSchema): Promise<PaginationServiceResponse<Parent>> {
     const filters: SQL[] = []
-    if (name) filters.push(ilike(this.parent.name, `%${name}%`))
+    if (name) filters.push(ilike(user.name, `%${name}%`))
 
     const where = and(...filters)
 
-    const query = this.db.select(this.columns)
-      .from(this.parent)
+    const query = this.select()
       .where(where)
-      .orderBy(asc(this.parent.name), asc(this.parent.id))
+      .orderBy(asc(user.name), asc(this.parent.id))
 
     if (!paginate) {
       const data = await query
@@ -65,10 +69,16 @@ export class ParentService {
       }
     }
 
-    const [data, totalCount] = await Promise.all([
+    const [data, [total]] = await Promise.all([
       query.limit(perPage).offset(perPage * (page - 1)),
-      this.db.$count(this.parent, where),
+      this.db.select({ totalCount: count() })
+        .from(this.parent)
+        .innerJoin(member, eq(member.id, this.parent.memberId))
+        .innerJoin(user, eq(user.id, member.userId))
+        .where(where),
     ])
+
+    const totalCount = total?.totalCount ?? 0
 
     return {
       data,
@@ -77,8 +87,7 @@ export class ParentService {
   }
 
   async findOne(id: string): Promise<Parent> {
-    const [res] = await this.db.select(this.columns)
-      .from(this.parent)
+    const [res] = await this.select()
       .where(eq(this.parent.id, id))
       .limit(1)
 
@@ -88,31 +97,42 @@ export class ParentService {
   }
 
   async findByMemberId(memberId: string): Promise<Parent> {
-    const [res] = await this.db.select(this.columns)
-      .from(this.parent)
+    const [res] = await this.select()
       .where(eq(this.parent.memberId, memberId))
       .limit(1)
 
     if (!res) throw new NotFoundError(`Parent with memberId ${memberId} not found`)
 
     return res
-
   }
 
-  async update(id: string, { name,address,emergencyContact,phoneNumber }: UpdateParent): Promise<Parent> {
+  async findUserId(id: string): Promise<string> {
+    const [res] = await this.db.select({ userId: member.userId })
+      .from(this.parent)
+      .innerJoin(member, eq(member.id, this.parent.memberId))
+      .where(eq(this.parent.id, id))
+      .limit(1)
+
+    if (!res) throw new NotFoundError(`Parent ${id} not found`)
+
+    return res.userId
+  }
+
+  async update(id: string, { address, emergencyContact, phoneNumber }: UpdateParent): Promise<Parent> {
+    if (address === undefined && emergencyContact === undefined && phoneNumber === undefined) return this.findOne(id)
+
     const [res] = await this.db.update(this.parent)
       .set({
-        name,
         address,
         emergencyContact,
         phoneNumber
       })
       .where(eq(this.parent.id, id))
-      .returning(this.columns)
+      .returning({ id: this.parent.id })
 
     if (!res) throw new NotFoundError(`Parent ${id} not found`)
 
-    return res
+    return this.findOne(res.id)
   }
 
 }

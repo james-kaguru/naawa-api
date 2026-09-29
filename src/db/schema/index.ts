@@ -7,8 +7,6 @@ export const parent = pgTable("parents", {
   memberId: text('member_id').notNull().references(() => member.id, {
      onDelete: 'restrict'
   }).unique(),
-  name: text('name').notNull(),
-  email: text('email').notNull().default(""),
   phoneNumber: text('phoneNumber').notNull(),
   address: text('address').notNull().default(""),
   emergencyContact: text('emergencyContact').notNull().default(""),

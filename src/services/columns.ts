@@ -1,7 +1,12 @@
+import { eq, sql, type SQL } from "drizzle-orm"
+import type { ParentTable } from "@/db/schema"
+import { member, user } from "@/db/schema/auth.schema"
+
+const parentUserField = (table: ParentTable, field: typeof user.name | typeof user.email) =>
+  sql<string>`(select ${field} from ${user} inner join ${member} on ${eq(member.userId, user.id)} where ${member.id} = ${table.memberId})`
+
 export const parentColumns = {
   id: true,
-  name: true,
-  email: true,
   memberId: true,
   phoneNumber: true,
   address: true,
@@ -20,7 +25,11 @@ export const childColumns = {
 export const childWith = {
   parents: {
     columns: parentColumns,
-    orderBy: { name: "asc" },
+    extras: {
+      name: (table: ParentTable): SQL<string> => parentUserField(table, user.name),
+      email: (table: ParentTable): SQL<string> => parentUserField(table, user.email),
+    },
+    orderBy: (table: ParentTable) => parentUserField(table, user.name),
   },
 } as const
 

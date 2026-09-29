@@ -36,7 +36,6 @@ class ParentController {
 
     const parent = await this.parentService.create({
       memberId: member.id,
-      name: body.name,
       phoneNumber: body.phoneNumber,
     })
 
@@ -58,17 +57,18 @@ class ParentController {
       throw new BadRequestError("No values to update")
 
     if (req.body.name) {
-      await auth.api.updateUser({
+      const userId = await this.parentService.findUserId(req.params.id);
+
+      await auth.api.adminUpdateUser({
         body: {
-          name: req.body.name
+          userId,
+          data: { name: req.body.name },
         },
         headers: fromNodeHeaders(req.headers),
       })
     }
 
-
     const parent = await this.parentService.update(req.params.id, {
-      name: req.body.name,
       emergencyContact: req.body.emergencyContact,
       phoneNumber: req.body.phoneNumber,
       address: req.body.address,
