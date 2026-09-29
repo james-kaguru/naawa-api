@@ -10,8 +10,8 @@ export const parent = pgTable("parents", {
   name: text('name').notNull(),
   email: text('email').notNull().default(""),
   phoneNumber: text('phoneNumber').notNull(),
-  address: text('address').default(""),
-  emergencyContact: text('emergencyContact').default(""),
+  address: text('address').notNull().default(""),
+  emergencyContact: text('emergencyContact').notNull().default(""),
 });
 
 export type ParentTable = typeof parent;
@@ -20,9 +20,9 @@ export const child = pgTable("children", {
   id: uuid().primaryKey().defaultRandom(),
   name: text('name').notNull(),
   dateOfBirth: date().notNull(),
-  allergies: text('allergies').default(""),
-  specialInstructions: text('specialInstructions').default(""),
-  medicalNotes: text('medicalNotes').default(""),
+  allergies: text('allergies').notNull().default(""),
+  specialInstructions: text('specialInstructions').notNull().default(""),
+  medicalNotes: text('medicalNotes').notNull().default(""),
 });
 
 export type ChildTable = typeof child;
@@ -31,7 +31,7 @@ export const childParent = pgTable("child_parents", {
   id: uuid().primaryKey().defaultRandom(),
   childId: uuid('child_id').notNull().references(() => child.id, { onDelete: 'restrict' }),
   parentId: uuid('parent_id').notNull().references(() => parent.id, { onDelete: 'restrict' }),
-  timestamp: timestamp().defaultNow(),
+  timestamp: timestamp().defaultNow().notNull(),
 },
 (t) => [
   unique('child_parents_child_id_parent_id_unique').on(t.childId,t.parentId)
@@ -67,7 +67,7 @@ export const staff = pgTable("staff", {
   id: uuid().primaryKey().defaultRandom(),
   memberId: text('member_id').notNull().references(() => member.id, { onDelete: 'restrict' }).unique(),
   childrenCentreId: uuid('child_center_id').notNull().references(() => childrenCentre.id, { onDelete: 'restrict' }),
-  timestamp: timestamp().defaultNow()
+  timestamp: timestamp().defaultNow().notNull()
 });
 
 export type StaffTable = typeof staff;
@@ -82,7 +82,7 @@ export const attendance = pgTable("attendances", {
   checkedInStaffId: uuid('checked_in_staff_id').notNull().references(() => staff.id, { onDelete: 'restrict' }),
   checkedOutStaffId: uuid('checked_out_staff_id').references(() => staff.id, { onDelete: 'restrict' }),
   status: attendanceStatus().notNull(),
-  checkedInAt: timestamp().defaultNow(),
+  checkedInAt: timestamp().defaultNow().notNull(),
   checkedOutAt: timestamp(),
 });
 
@@ -97,8 +97,8 @@ export const activity = pgTable("activities", {
   type: activityType().notNull(),
   description: text().notNull().default(""),
   details: json().notNull().default({}),
-  createdAt: timestamp().defaultNow(),
-  updatedAt: timestamp().defaultNow().$onUpdate(() => new Date()),
+  createdAt: timestamp().defaultNow().notNull(),
+  updatedAt: timestamp().defaultNow().$onUpdate(() => new Date()).notNull(),
 });
 
 

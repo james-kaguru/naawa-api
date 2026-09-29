@@ -6,17 +6,17 @@ export interface Parent {
     email: string;
     memberId: string;
     phoneNumber: string;
-    address: string | null;
-    emergencyContact: string | null;
+    address: string;
+    emergencyContact: string;
 }
 
 export interface Child {
   id: string;
   name: string;
   dateOfBirth: string;
-  allergies: string | null;
-  specialInstructions: string | null;
-  medicalNotes: string | null;
+  allergies: string;
+  specialInstructions: string;
+  medicalNotes: string;
   parents:Parent[]
 }
 
@@ -38,7 +38,7 @@ export interface Attendance {
   id: string;
   enrollmentId: string;
   status: AttendanceStatus;
-  checkedInAt: Date | null;
+  checkedInAt: Date;
   checkedOutAt: Date | null;
   child: PlainChild;
   checkedInBy: Staff;
