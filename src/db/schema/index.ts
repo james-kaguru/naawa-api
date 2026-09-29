@@ -47,6 +47,8 @@ export const childrenCentre = pgTable("children_centres", {
   organizationId: text('organization_id').notNull().references(() => organization.id, { onDelete: 'restrict' }).unique(),
 });
 
+export type ChildrenCentreTable = typeof childrenCentre;
+
 export const enrollmentStatus = pgEnum('enrollment_status', ['active', 'inactive']);
 
 export const enrollment = pgTable("enrollments", {
