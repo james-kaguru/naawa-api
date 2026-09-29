@@ -8,6 +8,16 @@ export interface Parent {
     emergencyContact: string | null;
 }
 
+export interface Child {
+  id: string;
+  name: string;
+  dateOfBirth: string;
+  allergies: string | null;
+  specialInstructions: string | null;
+  medicalNotes: string | null;
+  parents:Parent[]
+}
+
 export interface ChildrenCentre {
     name: string;
     id: string;

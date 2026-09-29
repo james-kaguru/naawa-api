@@ -32,9 +32,7 @@ class ChildController {
       this.parentService.findOne(req.body.parentId),
     ]);
 
-    await this.childService.addParent(req.params.id, req.body.parentId);
-
-    return this.childService.findOne(req.params.id);
+    return this.childService.addParent(req.params.id, req.body.parentId);
   }
 }
 

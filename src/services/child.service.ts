@@ -1,11 +1,9 @@
-import { and, asc, eq, ilike, inArray, type SQL } from "drizzle-orm"
+import { and, eq, ilike, inArray, sql, type SQL } from "drizzle-orm"
 import { db, type Db } from "@/db"
 import { child, childParent, type ChildParentTable, type ChildTable } from "@/db/schema"
 import NotFoundError from "@/common/errors/not-found.error"
-import type { PaginationServiceResponse } from "@/common/types"
+import type { Child, PaginationServiceResponse } from "@/common/types"
 import type { FindChildrenSchema } from "@/api/routes/child-router"
-
-export type Child = ChildTable["$inferSelect"]
 
 export interface CreateChild {
   parentId: string
@@ -26,43 +24,77 @@ export class ChildService {
   constructor(private db: Db, private child: ChildTable, private childParent: ChildParentTable) {
   }
 
-  async create({ parentId, name, dateOfBirth }: CreateChild) {
-    return this.db.transaction(async (tx) => {
-      const [res] = await tx.insert(this.child).values({
-        name,
-        dateOfBirth,
-      }).returning()
+  private readonly columns = {
+    id: true,
+    name: true,
+    dateOfBirth: true,
+    allergies: true,
+    specialInstructions: true,
+    medicalNotes: true,
+  } as const
 
-      await tx.insert(this.childParent).values({
-        childId: res!.id,
-        parentId
-      })
+  private readonly parentColumns = {
+    id: true,
+    name: true,
+    email: true,
+    memberId: true,
+    phoneNumber: true,
+    address: true,
+    emergencyContact: true,
+  } as const
 
-      return res!
-    })
+  private get with() {
+    return {
+      parents: {
+        columns: this.parentColumns,
+        orderBy: { name: "asc" },
+      },
+    } as const
   }
 
-  async find({ page, perPage, paginate, name, parentId }: FindChildrenSchema): Promise<PaginationServiceResponse<Child>> {
+  private filters(table: ChildTable, { name, parentId }: Pick<FindChildrenSchema, "name" | "parentId">) {
     const filters: SQL[] = []
-    if (name) filters.push(ilike(this.child.name, `%${name}%`))
+    if (name) filters.push(ilike(table.name, `%${name}%`))
     if (parentId) {
       filters.push(inArray(
-        this.child.id,
+        table.id,
         this.db.select({ id: this.childParent.childId })
           .from(this.childParent)
           .where(eq(this.childParent.parentId, parentId))
       ))
     }
 
-    const where = and(...filters)
+    return and(...filters)
+  }
 
-    const query = this.db.select()
-      .from(this.child)
-      .where(where)
-      .orderBy(asc(this.child.name), asc(this.child.id))
+  async create({ parentId, name, dateOfBirth }: CreateChild): Promise<Child> {
+    const id = await this.db.transaction(async (tx) => {
+      const [res] = await tx.insert(this.child).values({
+        name,
+        dateOfBirth,
+      }).returning({ id: this.child.id })
+
+      await tx.insert(this.childParent).values({
+        childId: res!.id,
+        parentId
+      })
+
+      return res!.id
+    })
+
+    return this.findOne(id)
+  }
+
+  async find({ page, perPage, paginate, name, parentId }: FindChildrenSchema): Promise<PaginationServiceResponse<Child>> {
+    const query = {
+      columns: this.columns,
+      with: this.with,
+      where: { RAW: (table: ChildTable) => this.filters(table, { name, parentId }) ?? sql`true` },
+      orderBy: { name: "asc", id: "asc" },
+    } as const
 
     if (!paginate) {
-      const data = await query
+      const data = await this.db.query.child.findMany(query)
 
       return {
         data,
@@ -71,8 +103,8 @@ export class ChildService {
     }
 
     const [data, totalCount] = await Promise.all([
-      query.limit(perPage).offset(perPage * (page - 1)),
-      this.db.$count(this.child, where),
+      this.db.query.child.findMany({ ...query, limit: perPage, offset: perPage * (page - 1) }),
+      this.db.$count(this.child, this.filters(this.child, { name, parentId })),
     ])
 
     return {
@@ -81,10 +113,11 @@ export class ChildService {
     }
   }
 
-  async findOne(id: string) {
+  async findOne(id: string): Promise<Child> {
     const res = await this.db.query.child.findFirst({
       where: { id },
-      with: { parents: true }
+      columns: this.columns,
+      with: this.with,
     })
 
     if (!res) throw new NotFoundError(`Child ${id} not found`)
@@ -92,7 +125,7 @@ export class ChildService {
     return res
   }
 
-  async update(id: string, { name, dateOfBirth, allergies, specialInstructions, medicalNotes }: UpdateChild) {
+  async update(id: string, { name, dateOfBirth, allergies, specialInstructions, medicalNotes }: UpdateChild): Promise<Child> {
     const [res] = await this.db.update(this.child)
       .set({
         name,
@@ -102,20 +135,19 @@ export class ChildService {
         medicalNotes
       })
       .where(eq(this.child.id, id))
-      .returning()
+      .returning({ id: this.child.id })
 
     if (!res) throw new NotFoundError(`Child ${id} not found`)
 
-    return res
+    return this.findOne(res.id)
   }
 
-  async addParent(childId: string, parentId: string) {
-    const [res] = await this.db.insert(this.childParent)
+  async addParent(childId: string, parentId: string): Promise<Child> {
+    await this.db.insert(this.childParent)
       .values({ childId, parentId })
       .onConflictDoNothing()
-      .returning()
 
-    return res
+    return this.findOne(childId)
   }
 
 }
