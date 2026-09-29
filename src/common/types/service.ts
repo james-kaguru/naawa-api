@@ -1,4 +1,4 @@
-import type { EnrollmentStatus } from "@/db/schema";
+import type { AttendanceStatus, EnrollmentStatus } from "@/db/schema";
 
 export interface Parent {
     id: string;
@@ -32,6 +32,17 @@ export interface Enrollment {
 export interface Staff {
   id: string;
   name: string;
+}
+
+export interface Attendance {
+  id: string;
+  enrollmentId: string;
+  status: AttendanceStatus;
+  checkedInAt: Date | null;
+  checkedOutAt: Date | null;
+  child: PlainChild;
+  checkedInBy: Staff;
+  checkedOutBy: Staff | null;
 }
 
 export interface ChildrenCentre {

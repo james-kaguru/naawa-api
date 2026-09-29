@@ -1,5 +1,3 @@
-// Relational query column selections, kept in sync with the response types in @/common/types
-
 export const parentColumns = {
   id: true,
   name: true,

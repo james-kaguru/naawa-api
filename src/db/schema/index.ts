@@ -74,6 +74,8 @@ export type StaffTable = typeof staff;
 
 export const attendanceStatus = pgEnum('attendance_status', ['checkedIn', 'checkedOut']);
 
+export type AttendanceStatus = (typeof attendanceStatus.enumValues)[number];
+
 export const attendance = pgTable("attendances", {
   id: uuid().primaryKey().defaultRandom(),
   enrollmentId: uuid('enrollment_id').notNull().references(() => enrollment.id, { onDelete: 'restrict' }),
@@ -83,6 +85,8 @@ export const attendance = pgTable("attendances", {
   checkedInAt: timestamp().defaultNow(),
   checkedOutAt: timestamp(),
 });
+
+export type AttendanceTable = typeof attendance;
 
 export const activityType = pgEnum('activity_type', ['meal', 'nap','incident','play','note']);
 
@@ -232,7 +236,6 @@ export const dbRelations = defineRelationsPart({ parent, child, childParent, chi
       optional: false,
     }),
   },
-  // Spreading parts replaces whole table entries, so member's auth relations are repeated here
   member: {
     organization: r.one.organization({
       from: r.member.organizationId,
