@@ -29,9 +29,18 @@ export class ChildrenCentreService {
   constructor(private db: Db, private childrenCentre: ChildrenCentreTable) {
   }
 
-  async create({ name, location }: CreateChildrenCentre) {
+  private get columns() {
+    return {
+      id: this.childrenCentre.id,
+      name: this.childrenCentre.name,
+      location: this.childrenCentre.location,
+    }
+  }
+
+  async create({ name, location }: CreateChildrenCentre): Promise<ChildrenCentre> {
     const existing = await this.db.query.childrenCentre.findFirst({
-      where: { organizationId:  ORGANIZATION_ID }
+      where: { organizationId:  ORGANIZATION_ID },
+      columns: { id: true }
     })
 
     if (existing) throw new BadRequestError(`Organization ${ORGANIZATION_ID} already has a children centre`)
@@ -40,9 +49,9 @@ export class ChildrenCentreService {
       name,
       location,
       organizationId:ORGANIZATION_ID
-    }).returning()
+    }).returning(this.columns)
 
-    return res
+    return res!
   }
 
   async find({ page, perPage, paginate, name, location }: FindChildrenCentres): Promise<PaginationServiceResponse<ChildrenCentre>> {
@@ -52,7 +61,7 @@ export class ChildrenCentreService {
 
     const where = and(...filters)
 
-    const query = this.db.select()
+    const query = this.db.select(this.columns)
       .from(this.childrenCentre)
       .where(where)
       .orderBy(asc(this.childrenCentre.name), asc(this.childrenCentre.id))
@@ -77,9 +86,10 @@ export class ChildrenCentreService {
     }
   }
 
-  async findOne(id: string) {
+  async findOne(id: string): Promise<ChildrenCentre> {
     const res = await this.db.query.childrenCentre.findFirst({
-      where: { id }
+      where: { id },
+      columns: { organizationId: false }
     })
 
     if (!res) throw new NotFoundError(`Children centre ${id} not found`)
@@ -87,9 +97,10 @@ export class ChildrenCentreService {
     return res
   }
 
-  async findByOrganizationId(organizationId: string) {
+  async findByOrganizationId(organizationId: string): Promise<ChildrenCentre> {
     const res = await this.db.query.childrenCentre.findFirst({
-      where: { organizationId }
+      where: { organizationId },
+      columns: { organizationId: false }
     })
 
     if (!res) throw new NotFoundError(`Children centre for organization ${organizationId} not found`)
@@ -97,14 +108,14 @@ export class ChildrenCentreService {
     return res
   }
 
-  async update(id: string, { name, location }: UpdateChildrenCentre) {
+  async update(id: string, { name, location }: UpdateChildrenCentre): Promise<ChildrenCentre> {
     const [res] = await this.db.update(this.childrenCentre)
       .set({
         name,
         location
       })
       .where(eq(this.childrenCentre.id, id))
-      .returning()
+      .returning(this.columns)
 
     if (!res) throw new NotFoundError(`Children centre ${id} not found`)
 
