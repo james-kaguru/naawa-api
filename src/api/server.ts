@@ -66,7 +66,7 @@ export default class ExpressServer {
   handleNotFound() {
     this.app.use((req, res) => {
       res.status(404).json({
-        message: "route not found",
+        message: `route ${req.url} not found`,
         status: 404
       })
     })

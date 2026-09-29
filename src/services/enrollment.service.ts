@@ -4,7 +4,7 @@ import { enrollment, type EnrollmentTable } from "@/db/schema"
 import NotFoundError from "@/common/errors/not-found.error"
 import BadRequestError from "@/common/errors/bad-request.error"
 import type { Enrollment, PaginationServiceResponse } from "@/common/types"
-import type { PaginationQuery } from "@/api/schemas"
+import type { FindEnrollmentsSchema } from "@/api/routes/enrollment-router"
 import { enrollmentColumns, enrollmentWith } from "./columns"
 
 export interface CreateEnrollment {
@@ -18,12 +18,6 @@ export type UpdateEnrollment = {
   startDate?: string | undefined
 }
 
-export type FindEnrollments = PaginationQuery & {
-  childId?: string | undefined
-  childrenCentreId?: string | undefined
-  status?: Enrollment["status"] | undefined
-}
-
 
 export class EnrollmentService {
   constructor(private db: Db, private enrollment: EnrollmentTable) {
@@ -33,7 +27,7 @@ export class EnrollmentService {
 
   private readonly with = enrollmentWith
 
-  private filters(table: EnrollmentTable, { childId, childrenCentreId, status }: Pick<FindEnrollments, "childId" | "childrenCentreId" | "status">) {
+  private filters(table: EnrollmentTable, { childId, childrenCentreId, status }: Pick<FindEnrollmentsSchema, "childId" | "childrenCentreId" | "status">) {
     const filters: SQL[] = []
     if (childId) filters.push(eq(table.childId, childId))
     if (childrenCentreId) filters.push(eq(table.childrenCentreId, childrenCentreId))
@@ -61,10 +55,10 @@ export class EnrollmentService {
       status: "active",
     }).returning({ id: this.enrollment.id })
 
-    return this.findOne(res!.id)
+    return this.findOne(res!.id, childrenCentreId)
   }
 
-  async find({ page, perPage, paginate, childId, childrenCentreId, status }: FindEnrollments): Promise<PaginationServiceResponse<Enrollment>> {
+  async find({ page, perPage, paginate, childId, childrenCentreId, status }: FindEnrollmentsSchema & { childrenCentreId: string }): Promise<PaginationServiceResponse<Enrollment>> {
     const query = {
       columns: this.columns,
       with: this.with,
@@ -92,9 +86,9 @@ export class EnrollmentService {
     }
   }
 
-  async findOne(id: string): Promise<Enrollment> {
+  async findOne(id: string, childrenCentreId: string): Promise<Enrollment> {
     const res = await this.db.query.enrollment.findFirst({
-      where: { id },
+      where: { id, childrenCentreId },
       columns: this.columns,
       with: this.with,
     })
@@ -104,18 +98,18 @@ export class EnrollmentService {
     return res
   }
 
-  async update(id: string, { status, startDate }: UpdateEnrollment): Promise<Enrollment> {
+  async update(id: string, childrenCentreId: string, { status, startDate }: UpdateEnrollment): Promise<Enrollment> {
     const [res] = await this.db.update(this.enrollment)
       .set({
         status,
         startDate
       })
-      .where(eq(this.enrollment.id, id))
+      .where(and(eq(this.enrollment.id, id), eq(this.enrollment.childrenCentreId, childrenCentreId)))
       .returning({ id: this.enrollment.id })
 
     if (!res) throw new NotFoundError(`Enrollment ${id} not found`)
 
-    return this.findOne(res.id)
+    return this.findOne(res.id, childrenCentreId)
   }
 
 }

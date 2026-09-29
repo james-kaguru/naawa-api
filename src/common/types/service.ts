@@ -18,6 +18,8 @@ export interface Child {
   parents:Parent[]
 }
 
+export type PlainChild = Omit<Child,"parents">
+
 export interface Enrollment {
   id: string;
   child: Child;
