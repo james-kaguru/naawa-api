@@ -15,7 +15,7 @@ export const attendanceParamsSchema = childrenCentreAttendancesParamsSchema.exte
 export type AttendanceParamsSchema = z.infer<typeof attendanceParamsSchema>;
 
 export const checkInSchema = z.object({
-  enrollmentId: z.uuid(),
+  childId: z.uuid(),
 });
 
 export type CheckInSchema = z.infer<typeof checkInSchema>;

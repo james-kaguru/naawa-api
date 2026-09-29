@@ -102,6 +102,18 @@ export class EnrollmentService {
     return res
   }
 
+  async findActiveByChildId(childId: string, childrenCentreId: string): Promise<Enrollment> {
+    const res = await this.db.query.enrollment.findFirst({
+      where: { childId, childrenCentreId, status: "active" },
+      columns: this.columns,
+      with: this.with,
+    })
+
+    if (!res) throw new BadRequestError(`Child ${childId} has no active enrollment at children centre ${childrenCentreId}`)
+
+    return res
+  }
+
   async update(id: string, childrenCentreId: string, { status, startDate }: UpdateEnrollment): Promise<Enrollment> {
     const [res] = await this.db.update(this.enrollment)
       .set({

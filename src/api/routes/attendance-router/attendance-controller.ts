@@ -10,7 +10,6 @@ import {
   type ChildrenCentreService,
   type EnrollmentService,
 } from "@/services";
-import BadRequestError from "@/common/errors/bad-request.error";
 import { currentStaffId } from "@/api/middlewares/auth.middleware";
 
 class AttendanceController {
@@ -24,13 +23,11 @@ class AttendanceController {
 
   async checkIn(req: Req<{ params: ChildrenCentreAttendancesParamsSchema, body: CheckInSchema }>, res: Response) {
     const { childrenCentreId } = req.params;
-    const { enrollmentId } = req.body;
+    const { childId } = req.body;
 
-    const enrollment = await this.enrollmentService.findOne(enrollmentId, childrenCentreId);
+    const enrollment = await this.enrollmentService.findActiveByChildId(childId, childrenCentreId);
 
-    if (enrollment.status !== "active") throw new BadRequestError(`Enrollment ${enrollmentId} is not active`);
-
-    return this.attendanceService.checkIn({ enrollmentId, staffId: currentStaffId(res) }, childrenCentreId);
+    return this.attendanceService.checkIn({ enrollmentId: enrollment.id, staffId: currentStaffId(res) }, childrenCentreId);
   }
 
   async checkOut(req: Req<{ params: AttendanceParamsSchema }>, res: Response) {
