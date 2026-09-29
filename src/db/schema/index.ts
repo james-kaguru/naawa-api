@@ -25,6 +25,8 @@ export const child = pgTable("children", {
   medicalNotes: text('medicalNotes').default(""),
 });
 
+export type ChildTable = typeof child;
+
 export const childParent = pgTable("child_parents", {
   id: uuid().primaryKey().defaultRandom(),
   childId: uuid('child_id').notNull().references(() => child.id, { onDelete: 'restrict' }),
@@ -35,6 +37,8 @@ export const childParent = pgTable("child_parents", {
   unique('child_parents_child_id_parent_id_unique').on(t.childId,t.parentId)
 ]
 );
+
+export type ChildParentTable = typeof childParent;
 
 export const childrenCentre = pgTable("children_centres", {
   id: uuid().primaryKey().defaultRandom(),
