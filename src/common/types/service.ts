@@ -22,7 +22,7 @@ export type PlainChild = Omit<Child,"parents">
 
 export interface Enrollment {
   id: string;
-  child: Child;
+  child: PlainChild;
   status: "active" | "inactive";
   startDate: string;
 }

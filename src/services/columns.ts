@@ -35,6 +35,5 @@ export const enrollmentColumns = {
 export const enrollmentWith = {
   child: {
     columns: childColumns,
-    with: childWith,
   },
 } as const

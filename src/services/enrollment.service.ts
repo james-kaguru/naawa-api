@@ -13,6 +13,10 @@ export interface CreateEnrollment {
   startDate: string
 }
 
+export type FindEnrollments = FindEnrollmentsSchema & {
+  childrenCentreId: string
+}
+
 export type UpdateEnrollment = {
   status?: Enrollment["status"] | undefined
   startDate?: string | undefined
@@ -27,7 +31,7 @@ export class EnrollmentService {
 
   private readonly with = enrollmentWith
 
-  private filters(table: EnrollmentTable, { childId, childrenCentreId, status }: Pick<FindEnrollmentsSchema, "childId" | "childrenCentreId" | "status">) {
+  private filters(table: EnrollmentTable, { childId, childrenCentreId, status }: Pick<FindEnrollments, "childId" | "childrenCentreId" | "status">) {
     const filters: SQL[] = []
     if (childId) filters.push(eq(table.childId, childId))
     if (childrenCentreId) filters.push(eq(table.childrenCentreId, childrenCentreId))
@@ -58,7 +62,7 @@ export class EnrollmentService {
     return this.findOne(res!.id, childrenCentreId)
   }
 
-  async find({ page, perPage, paginate, childId, childrenCentreId, status }: FindEnrollmentsSchema & { childrenCentreId: string }): Promise<PaginationServiceResponse<Enrollment>> {
+  async find({ page, perPage, paginate, childId, childrenCentreId, status }: FindEnrollments): Promise<PaginationServiceResponse<Enrollment>> {
     const query = {
       columns: this.columns,
       with: this.with,
