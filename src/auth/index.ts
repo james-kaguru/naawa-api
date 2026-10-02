@@ -5,6 +5,9 @@ import { ac, owner, admin as adminRole, member } from "./roles.ts";
 import * as schema from '@/db/schema/auth.schema';
 import { db } from "@/db";
 import { apiKey } from "@better-auth/api-key";
+import { defaultStatements, adminAc ,userAc} from "better-auth/plugins/admin/access";
+import { createAccessControl } from "better-auth/plugins/access";
+import { adminPlugin } from "./plugins/admin.ts";
 
 export const auth = betterAuth({
   baseURL: "http://localhost:8001",
@@ -26,18 +29,18 @@ export const auth = betterAuth({
     },
   },
   plugins: [
-    admin(),
-    organization({
-      ac,
-      roles: {
-        owner,
-        admin: adminRole,
-        member,
-      },
-      dynamicAccessControl: {
-        enabled: true,
-      },
-    }),
+    adminPlugin,
+    // organization({
+    //   ac,
+    //   roles: {
+    //     owner,
+    //     admin: adminRole,
+    //     member,
+    //   },
+    //   dynamicAccessControl: {
+    //     enabled: true,
+    //   },
+    // }),
     apiKey({
       enableSessionForAPIKeys: true,
       rateLimit: {

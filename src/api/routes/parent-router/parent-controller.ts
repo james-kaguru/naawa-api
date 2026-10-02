@@ -57,6 +57,7 @@ class ParentController {
       throw new BadRequestError("No values to update")
 
     if (req.body.name) {
+      console.log(fromNodeHeaders(req.headers))
       const userId = await this.parentService.findUserId(req.params.id);
 
       await auth.api.adminUpdateUser({

@@ -32,7 +32,7 @@ export async function loadSession(req: Request, res: Response, next: NextFunctio
 export function requireAuth(_req: Request, res: Response, next: NextFunction) {
   if (!res.locals.session) {
     res.status(401).json({
-      message: "unauthorized",
+      message: "Unauthorized",
       status: 401,
     });
     return;
