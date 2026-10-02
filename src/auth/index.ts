@@ -1,13 +1,11 @@
-import { betterAuth } from "better-auth";
-import { drizzleAdapter } from "@better-auth/drizzle-adapter/relations-v2";
-import { admin, organization } from "better-auth/plugins"
-import { ac, owner, admin as adminRole, member } from "./roles.ts";
-import * as schema from '@/db/schema/auth.schema';
 import { db } from "@/db";
+import * as schema from '@/db/schema/auth.schema';
 import { apiKey } from "@better-auth/api-key";
-import { defaultStatements, adminAc ,userAc} from "better-auth/plugins/admin/access";
-import { createAccessControl } from "better-auth/plugins/access";
+import { drizzleAdapter } from "@better-auth/drizzle-adapter/relations-v2";
+import { betterAuth } from "better-auth";
+import { organization } from "better-auth/plugins";
 import { adminPlugin } from "./plugins/admin.ts";
+import { ac, admin as adminRole, member, owner } from "./roles.ts";
 
 export const auth = betterAuth({
   baseURL: "http://localhost:8001",
@@ -30,17 +28,17 @@ export const auth = betterAuth({
   },
   plugins: [
     adminPlugin,
-    // organization({
-    //   ac,
-    //   roles: {
-    //     owner,
-    //     admin: adminRole,
-    //     member,
-    //   },
-    //   dynamicAccessControl: {
-    //     enabled: true,
-    //   },
-    // }),
+    organization({
+      ac,
+      roles: {
+        owner,
+        admin: adminRole,
+        member,
+      },
+      dynamicAccessControl: {
+        enabled: true,
+      },
+    }),
     apiKey({
       enableSessionForAPIKeys: true,
       rateLimit: {
