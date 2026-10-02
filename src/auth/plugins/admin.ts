@@ -20,6 +20,15 @@ const adminRole = systemAc.newRole({
   user: [statement.user[10]]
 });
 
+export const SystemRole = {
+  User: 'user',
+  SuperAdmin: 'superAdmin',
+  Admin: 'admin',
+} as const;
+
+export type SystemRole = (typeof SystemRole)[keyof typeof SystemRole];   // 'user' | 'superAdmin' | 'admin'
+
+export const systemRoles = Object.values(SystemRole);
 
 export const adminPlugin = admin({
   ac: systemAc,

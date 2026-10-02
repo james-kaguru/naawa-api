@@ -16,6 +16,8 @@ export default function errorMiddleware(err: Error, req: Req, res: Res, next: Ne
 
   if (err instanceof BaseError) {
     if (err.status === 500) {
+      console.log(err);
+
       res.status(500).json({
         status: 500,
         message: "Internal Server Error",
