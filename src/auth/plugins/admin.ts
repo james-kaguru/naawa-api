@@ -26,7 +26,7 @@ export const SystemRole = {
   Admin: 'admin',
 } as const;
 
-export type SystemRole = (typeof SystemRole)[keyof typeof SystemRole];   // 'user' | 'superAdmin' | 'admin'
+export type SystemRole = (typeof SystemRole)[keyof typeof SystemRole];
 
 export const systemRoles = Object.values(SystemRole);
 
