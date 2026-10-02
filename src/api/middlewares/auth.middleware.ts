@@ -1,31 +1,58 @@
 import type { NextFunction, Request, Response } from "express";
 import { fromNodeHeaders } from "better-auth/node";
 import { auth } from "../../auth/index.ts";
-import { staffService } from "@/services";
+import { memberService, parentService, staffService } from "@/services";
 import { ORGANIZATION_ID } from "@/common/constants";
-import { NotFoundError, ForbiddenError, UnauthorizedError, InternalServerError } from "@/common/errors";
-import type { ISystemRole, SystemRole } from "@/auth/plugins/admin";
+import {
+  NotFoundError,
+  ForbiddenError,
+  UnauthorizedError,
+  InternalServerError,
+} from "@/common/errors";
+import type { SystemRole } from "@/auth/plugins/admin";
 import type { Req, Res } from "@/common/types/index";
 
-type Session = typeof auth.$Infer.Session & {
-  staffId?: string;
-};
+type Session = typeof auth.$Infer.Session;
 
 declare global {
   namespace Express {
     interface Locals {
       session?: Session;
+      parentId?: string;
     }
   }
 }
 
-export async function loadSession(req: Request, res: Response, next: NextFunction) {
+export async function loadLocals(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) {
   const session = await auth.api.getSession({
     headers: fromNodeHeaders(req.headers),
   });
 
   if (session) {
     res.locals.session = session;
+
+    const member = await memberService.findByUserId(
+      session.user.id,
+      ORGANIZATION_ID,
+    );
+
+    await parentService
+      .findByMemberId(member.id)
+      .then((parent) => {
+        res.locals.parentId = parent.id;
+      })
+      .catch();
+
+    await staffService
+      .findByMemberId(member.id)
+      .then((staff) => {
+        res.locals.staffId = staff.id;
+      })
+      .catch();
   }
 
   next();
@@ -43,33 +70,6 @@ export function requireAuth(_req: Request, res: Response, next: NextFunction) {
   next();
 }
 
-export async function loadStaff(req: Request<{ childrenCentreId: string }>, res: Response, next: NextFunction) {
-  const session = res.locals.session;
-  if (!session) throw new UnauthorizedError("unauthorized");
-
-  const { members } = await auth.api.listMembers({
-    query: {
-      organizationId: ORGANIZATION_ID,
-      filterField: "userId",
-      filterOperator: "eq",
-      filterValue: session.user.id,
-    },
-    headers: fromNodeHeaders(req.headers),
-  });
-
-  const [member] = members;
-  if (!member) throw new ForbiddenError("You are not a member of this organization");
-
-  const staff = await staffService.findByMemberId(member.id, req.params.childrenCentreId).catch((error) => {
-    if (error instanceof NotFoundError) throw new ForbiddenError("You are not a staff member at this children centre");
-    throw error;
-  });
-
-  session.staffId = staff.id;
-
-  next();
-}
-
 export function currentUser(res: Response): Session["user"] {
   if (!res.locals.session) {
     throw new Error("currentUser() called on a route without requireAuth");
@@ -79,23 +79,32 @@ export function currentUser(res: Response): Session["user"] {
 }
 
 export function currentStaffId(res: Response): string {
-  if (!res.locals.session?.staffId) {
-    throw new Error("currentStaffId() called on a route without loadStaff");
+  if (!res.locals.staffId) {
+    throw new InternalServerError(`Staff id was not set`);
   }
 
-  return res.locals.session.staffId;
+  return res.locals.staffId;
 }
 
-export  function systemRoleCheck(roles: SystemRole[]) {
+export function currentParentId(res: Response): string {
+  if (!res.locals.parentId) {
+    throw new InternalServerError(`Parent id was not set`);
+  }
+
+  return res.locals.parentId;
+}
+
+export function systemRoleCheck(roles: SystemRole[]) {
   return (req: Req, res: Res, next: NextFunction) => {
-    const user = currentUser(res)
+    const user = currentUser(res);
     const userRole = user.role;
 
-    if (!userRole) throw new InternalServerError(`Role not set for user ${user.id}`)
+    if (!userRole)
+      throw new InternalServerError(`Role not set for user ${user.id}`);
 
-    if(!roles.includes(userRole as SystemRole))
-      throw new ForbiddenError('Forbidden')
+    if (!roles.includes(userRole as SystemRole))
+      throw new ForbiddenError("Forbidden");
 
-    next()
-  }
+    next();
+  };
 }
