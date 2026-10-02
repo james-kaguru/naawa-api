@@ -1,5 +1,14 @@
 import type { ActivityType, AttendanceStatus, EnrollmentStatus } from "@/db/schema";
 
+export interface Member {
+    id: string;
+    name: string;
+    email: string;
+    userId: string;
+    organizationId: string;
+    role: string;
+}
+
 export interface Parent {
     id: string;
     name: string;

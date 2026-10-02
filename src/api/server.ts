@@ -7,7 +7,7 @@ import { validateEnv, getEnv } from '../common/env-validator.ts';
 import { toNodeHandler } from "better-auth/node";
 import { auth } from '../auth/index.ts';
 import cors from "cors";
-import { loadSession } from './middlewares/auth.middleware.ts';
+import { loadLocals } from './middlewares/auth.middleware.ts';
 import errorMiddleware from './middlewares/error.middleware.ts';
 
 
@@ -53,7 +53,7 @@ export default class ExpressServer {
   }
 
   handleSession() {
-    this.app.use(loadSession);
+    this.app.use(loadLocals);
   }
 
   registerAuthRoutes() {
