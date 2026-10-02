@@ -1,7 +1,9 @@
 import type { Request } from "express";
 import type {
+  CreateMyChildSchema,
   CreateParentSchema,
   FindParentsSchema,
+  ParentChildrenParamsSchema,
   UpdateParentSchema,
 } from "./parent.request.ts";
 import { bindAll } from "@/common/utils";
@@ -20,6 +22,7 @@ import { auth } from "@/auth";
 import { ORGANIZATION_ID } from "@/common/constants";
 import { fromNodeHeaders } from "better-auth/node";
 import { BadRequestError } from "@/common/errors";
+import type { UpdateChildSchema } from "../child-router/child.request.ts";
 
 class ParentController {
   constructor(
@@ -65,7 +68,7 @@ class ParentController {
     return this.parentService.findOne(req.params.id);
   }
 
-  async findChildren(req: Req, res: Res) {
+  async findMyChildren(req: Req, res: Res) {
     const parentId = currentParentId(res);
 
     const { data } = await this.childService.find({
@@ -78,7 +81,25 @@ class ParentController {
     return data;
   }
 
-  async createChild() {}
+  async createMyChild(req: Req<{ body: CreateMyChildSchema }>, res: Res) {
+    const parentId = currentParentId(res);
+
+    return this.childService.create({
+      ...req.body,
+      parentId,
+    });
+  }
+
+  async updateMyChild(
+    req: Req<{ body: UpdateChildSchema; params: ParentChildrenParamsSchema }>,
+    res: Res,
+  ) {
+    const parentId = currentParentId(res);
+
+    await this.childService.findByParentId(req.params.childId, parentId);
+
+    await this.childService.update(req.params.childId, req.body);
+  }
 
   async update(req: Req<{ params: { id: string }; body: UpdateParentSchema }>) {
     await this.parentService.findOne(req.params.id);
