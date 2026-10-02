@@ -3,7 +3,9 @@ import { fromNodeHeaders } from "better-auth/node";
 import { auth } from "../../auth/index.ts";
 import { staffService } from "@/services";
 import { ORGANIZATION_ID } from "@/common/constants";
-import { NotFoundError, ForbiddenError, UnauthorizedError } from "@/common/errors";
+import { NotFoundError, ForbiddenError, UnauthorizedError, InternalServerError } from "@/common/errors";
+import type { ISystemRole, SystemRole } from "@/auth/plugins/admin";
+import type { Req, Res } from "@/common/types/index";
 
 type Session = typeof auth.$Infer.Session & {
   staffId?: string;
@@ -82,4 +84,18 @@ export function currentStaffId(res: Response): string {
   }
 
   return res.locals.session.staffId;
+}
+
+export  function systemRoleCheck(roles: SystemRole[]) {
+  return (req: Req, res: Res, next: NextFunction) => {
+    const user = currentUser(res)
+    const userRole = user.role;
+
+    if (!userRole) throw new InternalServerError(`Role not set for user ${user.id}`)
+
+    if(!roles.includes(userRole as SystemRole))
+      throw new ForbiddenError('Forbidden')
+
+    next()
+  }
 }

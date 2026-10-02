@@ -22,7 +22,7 @@ const adminRole = systemAc.newRole({
 
 export const SystemRole = {
   User: 'user',
-  SuperAdmin: 'superAdmin',
+  SystemAdmin: 'systemAdmin',
   Admin: 'admin',
 } as const;
 
