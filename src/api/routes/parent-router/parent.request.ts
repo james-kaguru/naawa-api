@@ -62,7 +62,7 @@ export const parentParamsSchema = z.object({
 
 export type ParentParamsSchema = z.infer<typeof parentParamsSchema>;
 
-export const parentChildrenParamsSchema = parentParamsSchema.extend({
+export const parentChildrenParamsSchema = z.object({
   childId: z.uuid(),
 });
 
