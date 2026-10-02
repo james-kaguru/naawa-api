@@ -1,16 +1,11 @@
-import type { NextFunction, Request, Response } from "express";
-import { fromNodeHeaders } from "better-auth/node";
-import { auth } from "../../auth/index.ts";
-import { memberService, parentService, staffService } from "@/services";
-import { ORGANIZATION_ID } from "@/common/constants";
-import {
-  NotFoundError,
-  ForbiddenError,
-  UnauthorizedError,
-  InternalServerError,
-} from "@/common/errors";
+import { auth, type OrgPermissions } from "@/auth";
 import type { SystemRole } from "@/auth/plugins/admin";
+import { ORGANIZATION_ID } from "@/common/constants";
+import { ForbiddenError, InternalServerError } from "@/common/errors";
 import type { Req, Res } from "@/common/types/index";
+import { memberService, parentService, staffService } from "@/services";
+import { fromNodeHeaders } from "better-auth/node";
+import type { NextFunction, Request, Response } from "express";
 
 type Session = typeof auth.$Infer.Session;
 
@@ -94,16 +89,28 @@ export function currentParentId(res: Response): string {
   return res.locals.parentId;
 }
 
-export function systemRoleCheck(roles: SystemRole[]) {
-  return (req: Req, res: Res, next: NextFunction) => {
+export interface AuthorizationCheck {
+  systemRoles?: SystemRole[];
+  permissions: OrgPermissions;
+}
+
+export function authorizationCheck(props: AuthorizationCheck) {
+  return async (req: Req, res: Res, next: NextFunction) => {
     const user = currentUser(res);
     const userRole = user.role;
 
     if (!userRole)
       throw new InternalServerError(`Role not set for user ${user.id}`);
 
-    if (!roles.includes(userRole as SystemRole))
-      throw new ForbiddenError("Forbidden");
+    if (props.systemRoles) {
+      if (!props.systemRoles.includes(userRole as SystemRole))
+        throw new ForbiddenError("Forbidden");
+    }
+
+    await auth.api.hasPermission({
+      headers: fromNodeHeaders(req.headers),
+      body: { permissions: props.permissions },
+    });
 
     next();
   };

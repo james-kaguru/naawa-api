@@ -1,4 +1,4 @@
-import { requireAuth, systemRoleCheck, validate } from "@/api/middlewares";
+import { requireAuth, authorizationCheck, validate } from "@/api/middlewares";
 import { SystemRole } from "@/auth/plugins/admin";
 import { handle } from "@/common/utils/index";
 import { Router } from "express";
@@ -17,20 +17,32 @@ const parentRouter: Router = Router();
 parentRouter.get(
   "/me/children",
   requireAuth,
-  systemRoleCheck([SystemRole.User]),
+  authorizationCheck({
+    permissions: {
+      ownChild: ["list"],
+    },
+  }),
   handle(parentController.findMyChildren),
 );
 parentRouter.post(
   "/me/children",
   requireAuth,
-  systemRoleCheck([SystemRole.User]),
+  authorizationCheck({
+    permissions: {
+      ownChild: ["create"],
+    },
+  }),
   validate({ body: createMyChildSchema }),
   handle(parentController.createMyChild, 201),
 );
 parentRouter.put(
   "/me/children/:childId",
   requireAuth,
-  systemRoleCheck([SystemRole.User]),
+  authorizationCheck({
+    permissions: {
+      ownChild: ["update"],
+    },
+  }),
   validate({ params: parentChildrenParamsSchema, body: updateMyChildSchema }),
   handle(parentController.updateMyChild),
 );
@@ -38,27 +50,45 @@ parentRouter.put(
 parentRouter.get(
   "/",
   requireAuth,
-  systemRoleCheck([SystemRole.Admin, SystemRole.SystemAdmin]),
+  authorizationCheck({
+    permissions: {
+      parent: ["list"],
+    },
+  }),
   validate({ query: findParentsSchema }),
   handle(parentController.find),
 );
 parentRouter.get(
   "/:id",
   requireAuth,
-  systemRoleCheck([SystemRole.Admin, SystemRole.SystemAdmin]),
+  authorizationCheck({
+    permissions: {
+      parent: ["list"],
+    },
+  }),
   handle(parentController.findOne),
 );
 parentRouter.post(
   "/",
   requireAuth,
-  systemRoleCheck([SystemRole.Admin, SystemRole.SystemAdmin]),
+  authorizationCheck({
+    systemRoles: [SystemRole.Admin, SystemRole.SystemAdmin],
+    permissions: {
+      parent: ["update"],
+    },
+  }),
   validate({ body: createParentSchema }),
   handle(parentController.create, 201),
 );
 parentRouter.put(
   "/:id",
   requireAuth,
-  systemRoleCheck([SystemRole.Admin, SystemRole.SystemAdmin]),
+  authorizationCheck({
+    systemRoles: [SystemRole.Admin, SystemRole.SystemAdmin],
+    permissions: {
+      parent: ["create"],
+    },
+  }),
   validate({ body: updateParentSchema }),
   handle(parentController.update),
 );
