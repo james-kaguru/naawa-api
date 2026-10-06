@@ -8,15 +8,16 @@ import {
   findChildrenCentresSchema,
   updateChildrenCentreSchema,
 } from "./children-centre.request";
-import { authorizationCheck } from "@/api/middlewares";
+import { requireAuth, authorizationCheck } from "@/api/middlewares";
 
 const childrenCentreRouter: Router = Router();
 
 childrenCentreRouter.get(
   "/",
+  requireAuth,
   authorizationCheck({
     permissions: {
-      child: ["list:own"],
+      childrenCentre: ["list"],
     },
   }),
   validate({ query: findChildrenCentresSchema }),
@@ -24,16 +25,34 @@ childrenCentreRouter.get(
 );
 childrenCentreRouter.get(
   "/:id",
+  requireAuth,
+  authorizationCheck({
+    permissions: {
+      childrenCentre: ["list"],
+    },
+  }),
   validate({ params: childrenCentreParamsSchema }),
   handle(childrenCentreController.findOne),
 );
 childrenCentreRouter.post(
   "/",
+  requireAuth,
+  authorizationCheck({
+    permissions: {
+      childrenCentre: ["create"],
+    },
+  }),
   validate({ body: createChildrenCentreSchema }),
   handle(childrenCentreController.create, 201),
 );
 childrenCentreRouter.put(
   "/:id",
+  requireAuth,
+  authorizationCheck({
+    permissions: {
+      childrenCentre: ["update"],
+    },
+  }),
   validate({
     params: childrenCentreParamsSchema,
     body: updateChildrenCentreSchema,

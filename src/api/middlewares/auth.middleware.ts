@@ -34,7 +34,7 @@ export async function loadLocals(
       body: {
         organizationId: ORGANIZATION_ID,
       },
-      headers: await fromNodeHeaders(req.headers),
+      headers: fromNodeHeaders(req.headers),
     });
 
     const member = await memberService.findByUserId(
@@ -114,10 +114,12 @@ export function authorizationCheck(props: AuthorizationCheck) {
         throw new ForbiddenError("Forbidden");
     }
 
-    await auth.api.hasPermission({
+    const { success } = await auth.api.hasPermission({
       headers: fromNodeHeaders(req.headers),
       body: { permissions: props.permissions },
     });
+
+    if (!success) throw new ForbiddenError("Forbidden");
 
     next();
   };

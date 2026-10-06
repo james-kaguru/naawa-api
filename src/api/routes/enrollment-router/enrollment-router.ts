@@ -2,13 +2,66 @@ import { Router } from "express";
 import { enrollmentController } from "./enrollment-controller";
 import { handle } from "@/common/utils/index";
 import { validate } from "@/api/middlewares/validate.middleware";
-import { childrenCentreEnrollmentsParamsSchema, createEnrollmentSchema, enrollmentParamsSchema, findEnrollmentsSchema, updateEnrollmentSchema } from "./enrollment.request";
+import {
+  childrenCentreEnrollmentsParamsSchema,
+  createEnrollmentSchema,
+  enrollmentParamsSchema,
+  findEnrollmentsSchema,
+  updateEnrollmentSchema,
+} from "./enrollment.request";
+import { requireAuth, authorizationCheck } from "@/api/middlewares";
 
 const enrollmentRouter: Router = Router({ mergeParams: true });
 
-enrollmentRouter.get("/", validate({ params: childrenCentreEnrollmentsParamsSchema, query: findEnrollmentsSchema }), handle(enrollmentController.find));
-enrollmentRouter.get("/:id", validate({ params: enrollmentParamsSchema }), handle(enrollmentController.findOne));
-enrollmentRouter.post("/", validate({ params: childrenCentreEnrollmentsParamsSchema, body: createEnrollmentSchema }), handle(enrollmentController.create, 201));
-enrollmentRouter.put("/:id", validate({ params: enrollmentParamsSchema, body: updateEnrollmentSchema }), handle(enrollmentController.update));
+enrollmentRouter.get(
+  "/",
+  requireAuth,
+  authorizationCheck({
+    permissions: {
+      enrollment: ["list"],
+    },
+  }),
+  validate({
+    params: childrenCentreEnrollmentsParamsSchema,
+    query: findEnrollmentsSchema,
+  }),
+  handle(enrollmentController.find),
+);
+enrollmentRouter.get(
+  "/:id",
+  requireAuth,
+  authorizationCheck({
+    permissions: {
+      enrollment: ["list"],
+    },
+  }),
+  validate({ params: enrollmentParamsSchema }),
+  handle(enrollmentController.findOne),
+);
+enrollmentRouter.post(
+  "/",
+  requireAuth,
+  authorizationCheck({
+    permissions: {
+      enrollment: ["create"],
+    },
+  }),
+  validate({
+    params: childrenCentreEnrollmentsParamsSchema,
+    body: createEnrollmentSchema,
+  }),
+  handle(enrollmentController.create, 201),
+);
+enrollmentRouter.put(
+  "/:id",
+  requireAuth,
+  authorizationCheck({
+    permissions: {
+      enrollment: ["update"],
+    },
+  }),
+  validate({ params: enrollmentParamsSchema, body: updateEnrollmentSchema }),
+  handle(enrollmentController.update),
+);
 
-export { enrollmentRouter }
+export { enrollmentRouter };
