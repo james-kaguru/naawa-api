@@ -1,14 +1,18 @@
 import {
   and,
   eq,
+  gte,
   ilike,
   inArray,
+  lt,
   notInArray,
+  or,
   sql,
   type SQL,
 } from "drizzle-orm";
 import { db, type Db } from "@/db";
 import {
+  attendance,
   child,
   childParent,
   enrollment,
@@ -19,6 +23,7 @@ import { NotFoundError } from "@/common/errors";
 import type { Child, PaginationServiceResponse } from "@/common/types";
 import type { FindChildrenSchema } from "@/api/routes/child-router";
 import type { FindUnenrolledChildrenSchema } from "@/api/routes/enrollment-router";
+import type { FindNotCheckedInChildrenSchema } from "@/api/routes/attendance-router";
 import { childColumns, childWith } from "./columns";
 
 export interface CreateChild {
@@ -36,6 +41,10 @@ export type UpdateChild = {
 };
 
 export type FindUnenrolledChildren = FindUnenrolledChildrenSchema & {
+  childrenCentreId: string;
+};
+
+export type FindNotCheckedInChildren = FindNotCheckedInChildrenSchema & {
   childrenCentreId: string;
 };
 
@@ -85,6 +94,52 @@ export class ChildService {
             and(
               eq(enrollment.childrenCentreId, childrenCentreId),
               eq(enrollment.status, "active"),
+            ),
+          ),
+      ),
+    ];
+    if (name) filters.push(ilike(table.name, `%${name}%`));
+
+    return and(...filters);
+  }
+
+  private notCheckedInFilters(
+    table: ChildTable,
+    {
+      name,
+      date,
+      childrenCentreId,
+    }: Pick<FindNotCheckedInChildren, "name" | "date" | "childrenCentreId">,
+  ) {
+    const start = new Date(`${date}T00:00:00`);
+    const end = new Date(start);
+    end.setDate(end.getDate() + 1);
+
+    const filters: SQL[] = [
+      inArray(
+        table.id,
+        this.db
+          .select({ id: enrollment.childId })
+          .from(enrollment)
+          .where(
+            and(
+              eq(enrollment.childrenCentreId, childrenCentreId),
+              eq(enrollment.status, "active"),
+              notInArray(
+                enrollment.id,
+                this.db
+                  .select({ id: attendance.enrollmentId })
+                  .from(attendance)
+                  .where(
+                    or(
+                      eq(attendance.status, "checkedIn"),
+                      and(
+                        gte(attendance.checkedInAt, start),
+                        lt(attendance.checkedInAt, end),
+                      ),
+                    ),
+                  ),
+              ),
             ),
           ),
       ),
@@ -207,6 +262,60 @@ export class ChildService {
         this.child,
         this.unenrolledFilters(this.child, { name, childrenCentreId }),
       ),
+    ]);
+
+    return {
+      data,
+      meta: {
+        page,
+        perPage,
+        totalPages: Math.ceil(totalCount / perPage),
+        totalCount,
+      },
+    };
+  }
+
+  async findNotCheckedIn({
+    page,
+    perPage,
+    paginate,
+    name,
+    date,
+    childrenCentreId,
+  }: FindNotCheckedInChildren): Promise<PaginationServiceResponse<Child>> {
+    const filters = { name, date, childrenCentreId };
+
+    const query = {
+      columns: this.columns,
+      with: this.with,
+      where: {
+        RAW: (table: ChildTable) =>
+          this.notCheckedInFilters(table, filters) ?? sql`true`,
+      },
+      orderBy: { name: "asc", id: "asc" },
+    } as const;
+
+    if (!paginate) {
+      const data = await this.db.query.child.findMany(query);
+
+      return {
+        data,
+        meta: {
+          page: 1,
+          perPage: data.length,
+          totalPages: 1,
+          totalCount: data.length,
+        },
+      };
+    }
+
+    const [data, totalCount] = await Promise.all([
+      this.db.query.child.findMany({
+        ...query,
+        limit: perPage,
+        offset: perPage * (page - 1),
+      }),
+      this.db.$count(this.child, this.notCheckedInFilters(this.child, filters)),
     ]);
 
     return {

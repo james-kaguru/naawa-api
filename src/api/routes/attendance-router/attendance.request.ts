@@ -27,3 +27,10 @@ export const findAttendancesSchema = paginationQuerySchema.extend({
 })
 
 export type FindAttendancesSchema = z.infer<typeof findAttendancesSchema>;
+
+export const findNotCheckedInChildrenSchema = paginationQuerySchema.extend({
+  name: z.string().optional(),
+  date: z.iso.date().default(() => new Date().toLocaleDateString("en-CA")),
+})
+
+export type FindNotCheckedInChildrenSchema = z.infer<typeof findNotCheckedInChildrenSchema>;

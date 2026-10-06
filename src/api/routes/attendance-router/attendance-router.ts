@@ -8,6 +8,7 @@ import {
   checkInSchema,
   childrenCentreAttendancesParamsSchema,
   findAttendancesSchema,
+  findNotCheckedInChildrenSchema,
 } from "./attendance.request";
 
 const attendanceRouter: Router = Router({ mergeParams: true });
@@ -25,6 +26,21 @@ attendanceRouter.get(
     query: findAttendancesSchema,
   }),
   handle(attendanceController.find),
+);
+attendanceRouter.get(
+  "/not-checked-in",
+  requireAuth,
+  authorizationCheck({
+    permissions: {
+      attendance: ["list"],
+      child: ["list"],
+    },
+  }),
+  validate({
+    params: childrenCentreAttendancesParamsSchema,
+    query: findNotCheckedInChildrenSchema,
+  }),
+  handle(attendanceController.findNotCheckedInChildren),
 );
 attendanceRouter.get(
   "/:id",
