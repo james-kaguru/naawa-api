@@ -23,16 +23,14 @@ class ActivityController {
 
   async create(req: Req<{ params: ChildrenCentreActivitiesParamsSchema, body: CreateActivitySchema }>, res: Response) {
     const { childrenCentreId } = req.params;
-    const { childId, type, description, details } = req.body;
+    const { childId, ...activity } = req.body;
 
     const attendance = await this.attendanceService.findOpenByChildId(childId, childrenCentreId);
 
     return this.activityService.create({
+      ...activity,
       attendanceId: attendance.id,
       staffId: currentStaffId(res),
-      type,
-      description,
-      details,
     }, childrenCentreId);
   }
 

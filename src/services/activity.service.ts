@@ -2,23 +2,19 @@ import { and, count, desc, eq, gte, lt, type SQL } from "drizzle-orm"
 import { db, type Db } from "@/db"
 import { activity, attendance, enrollment, staff, type ActivityTable } from "@/db/schema"
 import { member, user } from "@/db/schema/auth.schema"
-import { NotFoundError } from "@/common/errors"
+import { BadRequestError, NotFoundError } from "@/common/errors"
 import type { Activity, PaginationServiceResponse } from "@/common/types"
-import type { FindActivitiesSchema } from "@/api/routes/activity-router"
+import type { CreateActivitySchema, FindActivitiesSchema, UpdateActivitySchema } from "@/api/routes/activity-router"
+import { updateActivityDetailsSchemas, updateNapDetailsSchema } from "@/api/routes/activity-router/activity.request"
 
-export interface CreateActivity {
+type DistributiveOmit<T, K extends PropertyKey> = T extends unknown ? Omit<T, K> : never
+
+export type CreateActivity = DistributiveOmit<CreateActivitySchema, "childId"> & {
   attendanceId: string
   staffId: string
-  type: Activity["type"]
-  description: string
-  details: Record<string, unknown>
 }
 
-export type UpdateActivity = {
-  type?: Activity["type"] | undefined
-  description?: string | undefined
-  details?: Record<string, unknown> | undefined
-}
+export type UpdateActivity = UpdateActivitySchema
 
 export type FindActivities = FindActivitiesSchema & {
   childrenCentreId: string
@@ -70,11 +66,36 @@ export class ActivityService {
     return and(...filters)
   }
 
-  async create({ attendanceId, staffId, type, description, details }: CreateActivity, childrenCentreId: string): Promise<Activity> {
+  private mergeDetails(current: Activity, details: NonNullable<UpdateActivity["details"]>): Record<string, unknown> {
+    if (current.type === "nap") {
+      const parsed = updateNapDetailsSchema.safeParse(details)
+
+      if (!parsed.success) throw new BadRequestError(`Details are not valid for a nap activity`)
+
+      const { hasEnded, ...rest } = parsed.data
+      const merged: Record<string, unknown> = { ...current.details, ...rest }
+      if (hasEnded === true) merged.endTime = current.details.endTime ?? new Date().toISOString()
+      if (hasEnded === false) merged.endTime = null
+
+      return merged
+    }
+
+    const parsed = updateActivityDetailsSchemas[current.type].safeParse(details)
+
+    if (!parsed.success) throw new BadRequestError(`Details are not valid for a ${current.type} activity`)
+
+    return { ...current.details, ...parsed.data }
+  }
+
+  async create({ attendanceId, staffId, description, ...activity }: CreateActivity, childrenCentreId: string): Promise<Activity> {
+    const details = activity.type === "nap"
+      ? { startTime: activity.details.startTime ?? new Date().toISOString(), endTime: null }
+      : activity.details
+
     const [res] = await this.db.insert(this.activity).values({
       attendanceId,
       staffId,
-      type,
+      type: activity.type,
       description,
       details,
     }).returning({ id: this.activity.id })
@@ -125,14 +146,13 @@ export class ActivityService {
     return res
   }
 
-  async update(id: string, childrenCentreId: string, { type, description, details }: UpdateActivity): Promise<Activity> {
-    await this.findOne(id, childrenCentreId)
+  async update(id: string, childrenCentreId: string, { description, details }: UpdateActivity): Promise<Activity> {
+    const current = await this.findOne(id, childrenCentreId)
 
     await this.db.update(this.activity)
       .set({
-        type,
         description,
-        details,
+        details: details === undefined ? undefined : this.mergeDetails(current, details),
       })
       .where(eq(this.activity.id, id))
 
