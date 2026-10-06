@@ -1,4 +1,4 @@
-import { and, count, desc, eq, gte, lt, type SQL } from "drizzle-orm"
+import { and, count, desc, eq, gte, lt, or, type SQL } from "drizzle-orm"
 import { alias } from "drizzle-orm/pg-core"
 import { db, type Db } from "@/db"
 import { attendance, child, enrollment, staff, type AttendanceTable } from "@/db/schema"
@@ -184,6 +184,14 @@ export class AttendanceService {
     return this.toAttendance(res)
   }
 
+  async existsByStaffId(staffId: string): Promise<boolean> {
+    const [res] = await this.db.select({ id: this.attendance.id })
+      .from(this.attendance)
+      .where(or(eq(this.attendance.checkedInStaffId, staffId), eq(this.attendance.checkedOutStaffId, staffId)))
+      .limit(1)
+
+    return !!res
+  }
 }
 
 

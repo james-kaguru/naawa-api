@@ -1,14 +1,14 @@
 import type { ChildrenCentreStaffParamsSchema, CreateStaffSchema, FindStaffSchema, StaffParamsSchema } from "./staff.request.ts";
 import { bindAll } from "@/common/utils";
 import type { Req } from "@/common/types";
-import { childrenCentreService, staffService, type ChildrenCentreService, type StaffService } from "@/services";
+import { activityService, attendanceService, childrenCentreService, staffService, type ActivityService, type AttendanceService, type ChildrenCentreService, type StaffService } from "@/services";
 import { auth } from "@/auth";
 import { ORGANIZATION_ID } from "@/common/constants";
 import { fromNodeHeaders } from "better-auth/node";
-import { NotFoundError } from "@/common/errors";
+import { BadRequestError, NotFoundError } from "@/common/errors";
 
 class StaffController {
-  constructor(private staffService: StaffService, private childrenCentreService: ChildrenCentreService) {
+  constructor(private staffService: StaffService, private childrenCentreService: ChildrenCentreService, private attendanceService: AttendanceService, private activityService: ActivityService) {
     bindAll(this);
   }
 
@@ -48,6 +48,21 @@ class StaffController {
   async findOne(req: Req<{ params: StaffParamsSchema }>) {
     return this.staffService.findOne(req.params.id, req.params.childrenCentreId);
   }
+
+  async remove(req: Req<{ params: StaffParamsSchema }>) {
+    const { id, childrenCentreId } = req.params;
+
+    await this.staffService.findOne(id, childrenCentreId);
+
+    const [hasAttendances, hasActivities] = await Promise.all([
+      this.attendanceService.existsByStaffId(id),
+      this.activityService.existsByStaffId(id),
+    ]);
+
+    if (hasAttendances || hasActivities) throw new BadRequestError(`Staff ${id} has attendance or activity records and cannot be removed`)
+
+    return this.staffService.remove(id, childrenCentreId);
+  }
 }
 
-export const staffController = new StaffController(staffService, childrenCentreService);
+export const staffController = new StaffController(staffService, childrenCentreService, attendanceService, activityService);

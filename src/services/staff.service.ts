@@ -141,6 +141,14 @@ export class StaffService {
 
     return res;
   }
+
+  async remove(id: string, childrenCentreId: string): Promise<Staff> {
+    const res = await this.findOne(id, childrenCentreId);
+
+    await this.db.delete(this.staff).where(eq(this.staff.id, id));
+
+    return res;
+  }
 }
 
 export const staffService = new StaffService(db, staff);

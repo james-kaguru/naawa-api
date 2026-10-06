@@ -139,6 +139,14 @@ export class ActivityService {
     return this.findOne(id, childrenCentreId)
   }
 
+  async existsByStaffId(staffId: string): Promise<boolean> {
+    const [res] = await this.db.select({ id: this.activity.id })
+      .from(this.activity)
+      .where(eq(this.activity.staffId, staffId))
+      .limit(1)
+
+    return !!res
+  }
 }
 
 
