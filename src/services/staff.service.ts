@@ -133,12 +133,7 @@ export class StaffService {
 
   async findByMemberId(memberId: string): Promise<Staff> {
     const [res] = await this.select()
-      .where(
-        and(
-          eq(this.staff.memberId, memberId),
-          eq(this.staff.childrenCentreId, childrenCentreId),
-        ),
-      )
+      .where(and(eq(this.staff.memberId, memberId)))
       .limit(1);
 
     if (!res)

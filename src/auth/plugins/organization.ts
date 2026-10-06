@@ -37,6 +37,7 @@ export const owner = ac.newRole({
   ...ownerAc.statements,
   parent: ["create", "read", "list", "update", "delete"],
   child: ["create", "read", "list", "update", "delete"],
+  ownChild: ["create", "read", "list", "update", "delete"],
   activity: ["create", "read", "list", "update", "delete"],
   incident: ["create", "read", "list", "update", "delete"],
 });

@@ -30,6 +30,13 @@ export async function loadLocals(
   if (session) {
     res.locals.session = session;
 
+    await auth.api.setActiveOrganization({
+      body: {
+        organizationId: ORGANIZATION_ID,
+      },
+      headers: await fromNodeHeaders(req.headers),
+    });
+
     const member = await memberService.findByUserId(
       session.user.id,
       ORGANIZATION_ID,
@@ -40,14 +47,14 @@ export async function loadLocals(
       .then((parent) => {
         res.locals.parentId = parent.id;
       })
-      .catch();
+      .catch(() => {});
 
     await staffService
       .findByMemberId(member.id)
       .then((staff) => {
         res.locals.staffId = staff.id;
       })
-      .catch();
+      .catch(() => {});
   }
 
   next();
