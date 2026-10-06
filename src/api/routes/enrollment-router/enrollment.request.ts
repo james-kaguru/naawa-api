@@ -38,3 +38,9 @@ export const findEnrollmentsSchema = paginationQuerySchema.extend({
 })
 
 export type FindEnrollmentsSchema = z.infer<typeof findEnrollmentsSchema>;
+
+export const findUnenrolledChildrenSchema = paginationQuerySchema.extend({
+  name: z.string().optional(),
+})
+
+export type FindUnenrolledChildrenSchema = z.infer<typeof findUnenrolledChildrenSchema>;

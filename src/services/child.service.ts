@@ -1,14 +1,24 @@
-import { and, eq, ilike, inArray, sql, type SQL } from "drizzle-orm";
+import {
+  and,
+  eq,
+  ilike,
+  inArray,
+  notInArray,
+  sql,
+  type SQL,
+} from "drizzle-orm";
 import { db, type Db } from "@/db";
 import {
   child,
   childParent,
+  enrollment,
   type ChildParentTable,
   type ChildTable,
 } from "@/db/schema";
 import { NotFoundError } from "@/common/errors";
 import type { Child, PaginationServiceResponse } from "@/common/types";
 import type { FindChildrenSchema } from "@/api/routes/child-router";
+import type { FindUnenrolledChildrenSchema } from "@/api/routes/enrollment-router";
 import { childColumns, childWith } from "./columns";
 
 export interface CreateChild {
@@ -23,6 +33,10 @@ export type UpdateChild = {
   allergies?: string | undefined;
   specialInstructions?: string | undefined;
   medicalNotes?: string | undefined;
+};
+
+export type FindUnenrolledChildren = FindUnenrolledChildrenSchema & {
+  childrenCentreId: string;
 };
 
 export class ChildService {
@@ -53,6 +67,29 @@ export class ChildService {
         ),
       );
     }
+
+    return and(...filters);
+  }
+
+  private unenrolledFilters(
+    table: ChildTable,
+    { name, childrenCentreId }: Pick<FindUnenrolledChildren, "name" | "childrenCentreId">,
+  ) {
+    const filters: SQL[] = [
+      notInArray(
+        table.id,
+        this.db
+          .select({ id: enrollment.childId })
+          .from(enrollment)
+          .where(
+            and(
+              eq(enrollment.childrenCentreId, childrenCentreId),
+              eq(enrollment.status, "active"),
+            ),
+          ),
+      ),
+    ];
+    if (name) filters.push(ilike(table.name, `%${name}%`));
 
     return and(...filters);
   }
@@ -116,6 +153,60 @@ export class ChildService {
         offset: perPage * (page - 1),
       }),
       this.db.$count(this.child, this.filters(this.child, { name, parentId })),
+    ]);
+
+    return {
+      data,
+      meta: {
+        page,
+        perPage,
+        totalPages: Math.ceil(totalCount / perPage),
+        totalCount,
+      },
+    };
+  }
+
+  async findUnenrolled({
+    page,
+    perPage,
+    paginate,
+    name,
+    childrenCentreId,
+  }: FindUnenrolledChildren): Promise<PaginationServiceResponse<Child>> {
+    const query = {
+      columns: this.columns,
+      with: this.with,
+      where: {
+        RAW: (table: ChildTable) =>
+          this.unenrolledFilters(table, { name, childrenCentreId }) ?? sql`true`,
+      },
+      orderBy: { name: "asc", id: "asc" },
+    } as const;
+
+    if (!paginate) {
+      const data = await this.db.query.child.findMany(query);
+
+      return {
+        data,
+        meta: {
+          page: 1,
+          perPage: data.length,
+          totalPages: 1,
+          totalCount: data.length,
+        },
+      };
+    }
+
+    const [data, totalCount] = await Promise.all([
+      this.db.query.child.findMany({
+        ...query,
+        limit: perPage,
+        offset: perPage * (page - 1),
+      }),
+      this.db.$count(
+        this.child,
+        this.unenrolledFilters(this.child, { name, childrenCentreId }),
+      ),
     ]);
 
     return {

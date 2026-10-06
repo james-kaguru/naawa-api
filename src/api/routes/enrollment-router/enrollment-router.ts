@@ -7,6 +7,7 @@ import {
   createEnrollmentSchema,
   enrollmentParamsSchema,
   findEnrollmentsSchema,
+  findUnenrolledChildrenSchema,
   updateEnrollmentSchema,
 } from "./enrollment.request";
 import { requireAuth, authorizationCheck } from "@/api/middlewares";
@@ -26,6 +27,21 @@ enrollmentRouter.get(
     query: findEnrollmentsSchema,
   }),
   handle(enrollmentController.find),
+);
+enrollmentRouter.get(
+  "/unenrolled",
+  requireAuth,
+  authorizationCheck({
+    permissions: {
+      enrollment: ["list"],
+      child: ["list"],
+    },
+  }),
+  validate({
+    params: childrenCentreEnrollmentsParamsSchema,
+    query: findUnenrolledChildrenSchema,
+  }),
+  handle(enrollmentController.findUnenrolledChildren),
 );
 enrollmentRouter.get(
   "/:id",

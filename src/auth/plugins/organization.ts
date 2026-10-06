@@ -43,9 +43,9 @@ export const owner = ac.newRole({
   childrenCentre: ["create", "list", "update"],
   enrollment: ["create", "list", "update"],
   staff: ["create", "list", "delete"],
-  attendance: ["create", "list", "update", "list:own", "update:own"],
-  activity: ["create", "list", "update", "list:own", "update:own"],
-  incident: ["create", "list", "update", "list:own", "update:own"],
+  attendance: ["create", "list", "update", "list:own"],
+  activity: ["create", "list", "update", "list:own"],
+  incident: ["create", "list", "update", "list:own"],
 });
 
 export const organizationPlugin = organization({
