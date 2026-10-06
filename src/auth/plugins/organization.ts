@@ -10,10 +10,13 @@ import {
 
 export const orgPermisstionStatement = {
   ...defaultStatements,
-  parent: ["create", "read", "list", "update", "delete"],
-  child: ["create", "read", "list", "update", "delete", "create:own", "read:own", "list:own", "update:own", "delete:own"],
-  activity: ["create", "read", "list", "update", "delete"],
-  incident: ["create", "read", "list", "update", "delete"],
+  parent: ["create", "list", "update"],
+  child: ["create", "list", "update", "create:own", "list:own", "update:own"],
+  childrenCentre: ["create", "list", "update"],
+  enrollment: ["create", "list", "update"],
+  attendance: ["create", "list", "update", "list:own", "update:own"],
+  activity: ["create", "list", "update", "list:own", "update:own"],
+  incident: ["create", "list", "update", "list:own", "update:own"],
 } as const;
 
 export type OrgPermissionStatement = typeof orgPermisstionStatement;
@@ -34,10 +37,10 @@ export const admin = ac.newRole({
 
 export const owner = ac.newRole({
   ...ownerAc.statements,
-  parent: ["create", "read", "list", "update", "delete"],
-  child: ["create", "read", "list", "update", "delete", "create:own", "read:own", "list:own", "update:own", "delete:own"],
-  activity: ["create", "read", "list", "update", "delete"],
-  incident: ["create", "read", "list", "update", "delete"],
+  parent: ["create", "list", "update"],
+  child: ["create", "list", "update", "create:own", "list:own", "update:own"],
+  activity: ["create", "list", "update"],
+  incident: ["create", "list", "update"],
 });
 
 export const organizationPlugin = organization({
