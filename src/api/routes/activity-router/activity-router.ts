@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { activityController } from "./activity-controller";
 import { handle } from "@/common/utils/index";
-import { requireAuth } from "@/api/middlewares/auth.middleware";
+import { requireAuth, authorizationCheck } from "@/api/middlewares";
 import { validate } from "@/api/middlewares/validate.middleware";
 import {
   activityParamsSchema,
@@ -15,6 +15,12 @@ const activityRouter: Router = Router({ mergeParams: true });
 
 activityRouter.get(
   "/",
+  requireAuth,
+  authorizationCheck({
+    permissions: {
+      activity: ["list"],
+    },
+  }),
   validate({
     params: childrenCentreActivitiesParamsSchema,
     query: findActivitiesSchema,
@@ -23,12 +29,23 @@ activityRouter.get(
 );
 activityRouter.get(
   "/:id",
+  requireAuth,
+  authorizationCheck({
+    permissions: {
+      activity: ["list"],
+    },
+  }),
   validate({ params: activityParamsSchema }),
   handle(activityController.findOne),
 );
 activityRouter.post(
   "/",
   requireAuth,
+  authorizationCheck({
+    permissions: {
+      activity: ["create"],
+    },
+  }),
   validate({
     params: childrenCentreActivitiesParamsSchema,
     body: createActivitySchema,
@@ -38,6 +55,11 @@ activityRouter.post(
 activityRouter.put(
   "/:id",
   requireAuth,
+  authorizationCheck({
+    permissions: {
+      activity: ["update"],
+    },
+  }),
   validate({ params: activityParamsSchema, body: updateActivitySchema }),
   handle(activityController.update),
 );
