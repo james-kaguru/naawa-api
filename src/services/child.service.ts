@@ -1,8 +1,17 @@
-import { and, eq, ilike, inArray, sql, type SQL } from "drizzle-orm";
+import {
+  and,
+  eq,
+  ilike,
+  inArray,
+  notInArray,
+  sql,
+  type SQL,
+} from "drizzle-orm";
 import { db, type Db } from "@/db";
 import {
   child,
   childParent,
+  enrollment,
   type ChildParentTable,
   type ChildTable,
 } from "@/db/schema";
@@ -25,6 +34,10 @@ export type UpdateChild = {
   medicalNotes?: string | undefined;
 };
 
+export type FindChildren = FindChildrenSchema & {
+  inactiveAtChildrenCentreId?: string | undefined;
+};
+
 export class ChildService {
   constructor(
     private db: Db,
@@ -38,7 +51,11 @@ export class ChildService {
 
   private filters(
     table: ChildTable,
-    { name, parentId }: Pick<FindChildrenSchema, "name" | "parentId">,
+    {
+      name,
+      parentId,
+      inactiveAtChildrenCentreId,
+    }: Pick<FindChildren, "name" | "parentId" | "inactiveAtChildrenCentreId">,
   ) {
     const filters: SQL[] = [];
     if (name) filters.push(ilike(table.name, `%${name}%`));
@@ -52,6 +69,21 @@ export class ChildService {
             .where(eq(this.childParent.parentId, parentId)),
         ),
       );
+    }
+    if (inactiveAtChildrenCentreId) {
+      const enrolled = (status: "active" | "inactive") =>
+        this.db
+          .select({ id: enrollment.childId })
+          .from(enrollment)
+          .where(
+            and(
+              eq(enrollment.childrenCentreId, inactiveAtChildrenCentreId),
+              eq(enrollment.status, status),
+            ),
+          );
+
+      filters.push(inArray(table.id, enrolled("inactive")));
+      filters.push(notInArray(table.id, enrolled("active")));
     }
 
     return and(...filters);
@@ -84,13 +116,16 @@ export class ChildService {
     paginate,
     name,
     parentId,
-  }: FindChildrenSchema): Promise<PaginationServiceResponse<Child>> {
+    inactiveAtChildrenCentreId,
+  }: FindChildren): Promise<PaginationServiceResponse<Child>> {
+    const filters = { name, parentId, inactiveAtChildrenCentreId };
+
     const query = {
       columns: this.columns,
       with: this.with,
       where: {
         RAW: (table: ChildTable) =>
-          this.filters(table, { name, parentId }) ?? sql`true`,
+          this.filters(table, filters) ?? sql`true`,
       },
       orderBy: { name: "asc", id: "asc" },
     } as const;
@@ -115,7 +150,7 @@ export class ChildService {
         limit: perPage,
         offset: perPage * (page - 1),
       }),
-      this.db.$count(this.child, this.filters(this.child, { name, parentId })),
+      this.db.$count(this.child, this.filters(this.child, filters)),
     ]);
 
     return {

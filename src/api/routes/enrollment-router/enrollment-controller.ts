@@ -1,4 +1,4 @@
-import type { ChildrenCentreEnrollmentsParamsSchema, CreateEnrollmentSchema, EnrollmentParamsSchema, FindEnrollmentsSchema, UpdateEnrollmentSchema } from "./enrollment.request.ts";
+import type { ChildrenCentreEnrollmentsParamsSchema, CreateEnrollmentSchema, EnrollmentParamsSchema, FindEnrollmentsSchema, FindInactiveChildrenSchema, UpdateEnrollmentSchema } from "./enrollment.request.ts";
 import { bindAll } from "@/common/utils";
 import type { Req } from "@/common/types";
 import {
@@ -36,6 +36,14 @@ class EnrollmentController {
     await this.childrenCentreService.findOne(childrenCentreId);
 
     return this.enrollmentService.find({ ...req.query, childrenCentreId });
+  }
+
+  async findInactiveChildren(req: Req<{ params: ChildrenCentreEnrollmentsParamsSchema, query: FindInactiveChildrenSchema }>) {
+    const { childrenCentreId } = req.params;
+
+    await this.childrenCentreService.findOne(childrenCentreId);
+
+    return this.childService.find({ ...req.query, inactiveAtChildrenCentreId: childrenCentreId });
   }
 
   async findOne(req: Req<{ params: EnrollmentParamsSchema }>) {
