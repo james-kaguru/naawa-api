@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { attendanceController } from "./attendance-controller";
 import { handle } from "@/common/utils/index";
-import { requireAuth } from "@/api/middlewares/auth.middleware";
+import { requireAuth, authorizationCheck } from "@/api/middlewares";
 import { validate } from "@/api/middlewares/validate.middleware";
 import {
   attendanceParamsSchema,
@@ -14,6 +14,12 @@ const attendanceRouter: Router = Router({ mergeParams: true });
 
 attendanceRouter.get(
   "/",
+  requireAuth,
+  authorizationCheck({
+    permissions: {
+      attendance: ["list"],
+    },
+  }),
   validate({
     params: childrenCentreAttendancesParamsSchema,
     query: findAttendancesSchema,
@@ -22,12 +28,23 @@ attendanceRouter.get(
 );
 attendanceRouter.get(
   "/:id",
+  requireAuth,
+  authorizationCheck({
+    permissions: {
+      attendance: ["list"],
+    },
+  }),
   validate({ params: attendanceParamsSchema }),
   handle(attendanceController.findOne),
 );
 attendanceRouter.post(
   "/",
   requireAuth,
+  authorizationCheck({
+    permissions: {
+      attendance: ["create"],
+    },
+  }),
   validate({
     params: childrenCentreAttendancesParamsSchema,
     body: checkInSchema,
@@ -37,6 +54,11 @@ attendanceRouter.post(
 attendanceRouter.post(
   "/:id/check-out",
   requireAuth,
+  authorizationCheck({
+    permissions: {
+      attendance: ["update"],
+    },
+  }),
   validate({ params: attendanceParamsSchema }),
   handle(attendanceController.checkOut),
 );

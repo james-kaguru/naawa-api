@@ -13,11 +13,11 @@ export const orgPermisstionStatement = {
   parent: ["create", "list", "update"],
   child: ["create", "list", "update", "create:own", "list:own", "update:own"],
   childrenCentre: ["create", "list", "update"],
-  enrollment: ["create", "list", "update"],
+  enrollment: ["create", "list", "update", "list:own"],
   staff: ["create", "list", "delete"],
-  attendance: ["create", "list", "update", "list:own", "update:own"],
-  activity: ["create", "list", "update", "list:own", "update:own"],
-  incident: ["create", "list", "update", "list:own", "update:own"],
+  attendance: ["create", "list", "update", "list:own"],
+  activity: ["create", "list", "update", "list:own"],
+  incident: ["create", "list", "update", "list:own"],
 } as const;
 
 export type OrgPermissionStatement = typeof orgPermisstionStatement;
