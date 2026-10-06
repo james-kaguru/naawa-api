@@ -19,7 +19,7 @@ parentRouter.get(
   requireAuth,
   authorizationCheck({
     permissions: {
-      ownChild: ["list"],
+      child: ["list:own"],
     },
   }),
   handle(parentController.findMyChildren),
@@ -29,7 +29,7 @@ parentRouter.post(
   requireAuth,
   authorizationCheck({
     permissions: {
-      ownChild: ["create"],
+      child: ["create:own"],
     },
   }),
   validate({ body: createMyChildSchema }),
@@ -40,7 +40,7 @@ parentRouter.put(
   requireAuth,
   authorizationCheck({
     permissions: {
-      ownChild: ["update"],
+      child: ["update:own"],
     },
   }),
   validate({ params: parentChildrenParamsSchema, body: updateMyChildSchema }),

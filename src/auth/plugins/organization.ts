@@ -11,8 +11,7 @@ import {
 export const orgPermisstionStatement = {
   ...defaultStatements,
   parent: ["create", "read", "list", "update", "delete"],
-  child: ["create", "read", "list", "update", "delete"],
-  ownChild: ["create", "read", "list", "update", "delete"],
+  child: ["create", "read", "list", "update", "delete", "create:own", "read:own", "list:own", "update:own", "delete:own"],
   activity: ["create", "read", "list", "update", "delete"],
   incident: ["create", "read", "list", "update", "delete"],
 } as const;
@@ -36,8 +35,7 @@ export const admin = ac.newRole({
 export const owner = ac.newRole({
   ...ownerAc.statements,
   parent: ["create", "read", "list", "update", "delete"],
-  child: ["create", "read", "list", "update", "delete"],
-  ownChild: ["create", "read", "list", "update", "delete"],
+  child: ["create", "read", "list", "update", "delete", "create:own", "read:own", "list:own", "update:own", "delete:own"],
   activity: ["create", "read", "list", "update", "delete"],
   incident: ["create", "read", "list", "update", "delete"],
 });
