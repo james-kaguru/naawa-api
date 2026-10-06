@@ -1,4 +1,4 @@
-import { and, eq, sql, type SQL } from "drizzle-orm"
+import { and, eq, ne, sql, type SQL } from "drizzle-orm"
 import { db, type Db } from "@/db"
 import { enrollment, type EnrollmentTable } from "@/db/schema"
 import { NotFoundError, BadRequestError } from "@/common/errors"
@@ -114,6 +114,27 @@ export class EnrollmentService {
   }
 
   async update(id: string, childrenCentreId: string, { status, startDate }: UpdateEnrollment): Promise<Enrollment> {
+    if (status === "active") {
+      const [current] = await this.db.select({ childId: this.enrollment.childId })
+        .from(this.enrollment)
+        .where(and(eq(this.enrollment.id, id), eq(this.enrollment.childrenCentreId, childrenCentreId)))
+        .limit(1)
+
+      if (!current) throw new NotFoundError(`Enrollment ${id} not found`)
+
+      const [existing] = await this.db.select({ id: this.enrollment.id })
+        .from(this.enrollment)
+        .where(and(
+          ne(this.enrollment.id, id),
+          eq(this.enrollment.childId, current.childId),
+          eq(this.enrollment.childrenCentreId, childrenCentreId),
+          eq(this.enrollment.status, "active"),
+        ))
+        .limit(1)
+
+      if (existing) throw new BadRequestError(`Child ${current.childId} already has an active enrollment at children centre ${childrenCentreId}`)
+    }
+
     const [res] = await this.db.update(this.enrollment)
       .set({
         status,
