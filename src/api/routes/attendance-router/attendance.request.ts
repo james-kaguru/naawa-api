@@ -15,7 +15,9 @@ export const attendanceParamsSchema = childrenCentreAttendancesParamsSchema.exte
 export type AttendanceParamsSchema = z.infer<typeof attendanceParamsSchema>;
 
 export const checkInSchema = z.object({
-  childId: z.uuid(),
+  childIds: z.array(z.uuid()).min(1).refine((ids) => new Set(ids).size === ids.length, {
+    message: "Child ids must be unique",
+  }),
 });
 
 export type CheckInSchema = z.infer<typeof checkInSchema>;

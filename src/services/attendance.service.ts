@@ -1,4 +1,4 @@
-import { and, count, desc, eq, gte, lt, or, type SQL } from "drizzle-orm"
+import { and, count, desc, eq, gte, inArray, lt, or, type SQL } from "drizzle-orm"
 import { alias } from "drizzle-orm/pg-core"
 import { db, type Db } from "@/db"
 import { attendance, child, enrollment, staff, type AttendanceTable } from "@/db/schema"
@@ -8,7 +8,7 @@ import type { Attendance, PaginationServiceResponse } from "@/common/types"
 import type { FindAttendancesSchema } from "@/api/routes/attendance-router"
 
 export interface CheckIn {
-  enrollmentId: string
+  enrollmentIds: string[]
   staffId: string
 }
 
@@ -92,24 +92,28 @@ export class AttendanceService {
     return and(...filters)
   }
 
-  async checkIn({ enrollmentId, staffId }: CheckIn, childrenCentreId: string): Promise<Attendance> {
-    const [open] = await this.db.select({ id: this.attendance.id })
+  async checkIn({ enrollmentIds, staffId }: CheckIn, childrenCentreId: string): Promise<Attendance[]> {
+    const open = await this.db.select({ childId: enrollment.childId })
       .from(this.attendance)
+      .innerJoin(enrollment, eq(enrollment.id, this.attendance.enrollmentId))
       .where(and(
-        eq(this.attendance.enrollmentId, enrollmentId),
+        inArray(this.attendance.enrollmentId, enrollmentIds),
         eq(this.attendance.status, "checkedIn"),
       ))
-      .limit(1)
 
-    if (open) throw new BadRequestError(`Enrollment ${enrollmentId} is already checked in`)
+    if (open.length) throw new BadRequestError(`Children ${open.map(({ childId }) => childId).join(", ")} are already checked in`)
 
-    const [res] = await this.db.insert(this.attendance).values({
+    const res = await this.db.insert(this.attendance).values(enrollmentIds.map((enrollmentId) => ({
       enrollmentId,
       checkedInStaffId: staffId,
-      status: "checkedIn",
-    }).returning({ id: this.attendance.id })
+      status: "checkedIn" as const,
+    }))).returning({ id: this.attendance.id })
 
-    return this.findOne(res!.id, childrenCentreId)
+    const data = await this.select()
+      .where(and(inArray(this.attendance.id, res.map(({ id }) => id)), eq(enrollment.childrenCentreId, childrenCentreId)))
+      .orderBy(child.name, this.attendance.id)
+
+    return data.map((row) => this.toAttendance(row))
   }
 
   async checkOut(id: string, { staffId }: CheckOut, childrenCentreId: string): Promise<Attendance> {

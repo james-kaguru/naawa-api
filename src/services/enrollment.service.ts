@@ -101,14 +101,16 @@ export class EnrollmentService {
     return res
   }
 
-  async findActiveByChildId(childId: string, childrenCentreId: string): Promise<Enrollment> {
-    const res = await this.db.query.enrollment.findFirst({
-      where: { childId, childrenCentreId, status: "active" },
+  async findActiveByChildIds(childIds: string[], childrenCentreId: string): Promise<Enrollment[]> {
+    const res = await this.db.query.enrollment.findMany({
+      where: { childId: { in: childIds }, childrenCentreId, status: "active" },
       columns: this.columns,
       with: this.with,
     })
 
-    if (!res) throw new BadRequestError(`Child ${childId} has no active enrollment at children centre ${childrenCentreId}`)
+    const missing = childIds.filter((childId) => !res.some((enrollment) => enrollment.child.id === childId))
+
+    if (missing.length) throw new BadRequestError(`Children ${missing.join(", ")} have no active enrollment at children centre ${childrenCentreId}`)
 
     return res
   }

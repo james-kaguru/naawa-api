@@ -26,11 +26,11 @@ class AttendanceController {
 
   async checkIn(req: Req<{ params: ChildrenCentreAttendancesParamsSchema, body: CheckInSchema }>, res: Response) {
     const { childrenCentreId } = req.params;
-    const { childId } = req.body;
+    const { childIds } = req.body;
 
-    const enrollment = await this.enrollmentService.findActiveByChildId(childId, childrenCentreId);
+    const enrollments = await this.enrollmentService.findActiveByChildIds(childIds, childrenCentreId);
 
-    return this.attendanceService.checkIn({ enrollmentId: enrollment.id, staffId: currentStaffId(res) }, childrenCentreId);
+    return this.attendanceService.checkIn({ enrollmentIds: enrollments.map((enrollment) => enrollment.id), staffId: currentStaffId(res) }, childrenCentreId);
   }
 
   async checkOut(req: Req<{ params: AttendanceParamsSchema }>, res: Response) {
