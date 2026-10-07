@@ -101,6 +101,14 @@ export class EnrollmentService {
     return res
   }
 
+  async findActiveChildIds(childrenCentreId: string): Promise<string[]> {
+    const res = await this.db.select({ childId: this.enrollment.childId })
+      .from(this.enrollment)
+      .where(and(eq(this.enrollment.childrenCentreId, childrenCentreId), eq(this.enrollment.status, "active")))
+
+    return res.map(({ childId }) => childId)
+  }
+
   async findActiveByChildIds(childIds: string[], childrenCentreId: string): Promise<Enrollment[]> {
     const res = await this.db.query.enrollment.findMany({
       where: { childId: { in: childIds }, childrenCentreId, status: "active" },

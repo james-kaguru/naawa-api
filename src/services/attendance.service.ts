@@ -6,6 +6,7 @@ import { member, user } from "@/db/schema/auth.schema"
 import { NotFoundError, BadRequestError } from "@/common/errors"
 import type { Attendance, PaginationServiceResponse } from "@/common/types"
 import type { FindAttendancesSchema } from "@/api/routes/attendance-router"
+import { childSelect, staffSelect } from "./columns"
 
 export interface CheckIn {
   enrollmentIds: string[]
@@ -39,22 +40,9 @@ export class AttendanceService {
       status: this.attendance.status,
       checkedInAt: this.attendance.checkedInAt,
       checkedOutAt: this.attendance.checkedOutAt,
-      child: {
-        id: child.id,
-        name: child.name,
-        dateOfBirth: child.dateOfBirth,
-        allergies: child.allergies,
-        specialInstructions: child.specialInstructions,
-        medicalNotes: child.medicalNotes,
-      },
-      checkedInBy: {
-        id: checkedInStaff.id,
-        name: checkedInUser.name,
-      },
-      checkedOutBy: {
-        id: checkedOutStaff.id,
-        name: checkedOutUser.name,
-      },
+      child: childSelect,
+      checkedInBy: staffSelect(checkedInStaff, checkedInUser),
+      checkedOutBy: staffSelect(checkedOutStaff, checkedOutUser),
     }
   }
 
@@ -186,6 +174,25 @@ export class AttendanceService {
     if (!res) throw new BadRequestError(`Child ${childId} is not checked in at children centre ${childrenCentreId}`)
 
     return this.toAttendance(res)
+  }
+
+  async findCheckedInChildIds(childrenCentreId: string, date: string): Promise<string[]> {
+    const start = new Date(`${date}T00:00:00`)
+    const end = new Date(start)
+    end.setDate(end.getDate() + 1)
+
+    const res = await this.db.selectDistinct({ childId: enrollment.childId })
+      .from(this.attendance)
+      .innerJoin(enrollment, eq(enrollment.id, this.attendance.enrollmentId))
+      .where(and(
+        eq(enrollment.childrenCentreId, childrenCentreId),
+        or(
+          eq(this.attendance.status, "checkedIn"),
+          and(gte(this.attendance.checkedInAt, start), lt(this.attendance.checkedInAt, end)),
+        ),
+      ))
+
+    return res.map(({ childId }) => childId)
   }
 
   async existsByStaffId(staffId: string): Promise<boolean> {

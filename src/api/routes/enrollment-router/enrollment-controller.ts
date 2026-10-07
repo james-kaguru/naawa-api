@@ -43,7 +43,9 @@ class EnrollmentController {
 
     await this.childrenCentreService.findOne(childrenCentreId);
 
-    return this.childService.findUnenrolled({ ...req.query, childrenCentreId });
+    const enrolledChildIds = await this.enrollmentService.findActiveChildIds(childrenCentreId);
+
+    return this.childService.findUnenrolled({ ...req.query, enrolledChildIds });
   }
 
   async findOne(req: Req<{ params: EnrollmentParamsSchema }>) {

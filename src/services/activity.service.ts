@@ -5,6 +5,7 @@ import { member, user } from "@/db/schema/auth.schema"
 import { BadRequestError, NotFoundError } from "@/common/errors"
 import type { Activity, PaginationServiceResponse } from "@/common/types"
 import type { CreateActivitySchema, FindActivitiesSchema, UpdateActivitySchema } from "@/api/routes/activity-router"
+import { staffSelect } from "./columns"
 import { updateActivityDetailsSchemas, updateNapDetailsSchema } from "@/api/routes/activity-router/activity.request"
 
 type DistributiveOmit<T, K extends PropertyKey> = T extends unknown ? Omit<T, K> : never
@@ -35,10 +36,7 @@ export class ActivityService {
       type: this.activity.type,
       description: this.activity.description,
       details: this.activity.details,
-      staff: {
-        id: staff.id,
-        name: user.name,
-      },
+      staff: staffSelect(staff, user),
       createdAt: this.activity.createdAt,
       updatedAt: this.activity.updatedAt,
     }

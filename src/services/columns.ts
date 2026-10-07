@@ -1,5 +1,6 @@
 import { eq, sql, type SQL } from "drizzle-orm"
-import type { ParentTable } from "@/db/schema"
+import type { AnyPgColumn } from "drizzle-orm/pg-core"
+import { child, type ParentTable } from "@/db/schema"
 import { member, user } from "@/db/schema/auth.schema"
 
 const parentUserField = (table: ParentTable, field: typeof user.name | typeof user.email) =>
@@ -21,6 +22,20 @@ export const childColumns = {
   specialInstructions: true,
   medicalNotes: true,
 } as const
+
+export const childSelect = {
+  id: child.id,
+  name: child.name,
+  dateOfBirth: child.dateOfBirth,
+  allergies: child.allergies,
+  specialInstructions: child.specialInstructions,
+  medicalNotes: child.medicalNotes,
+}
+
+export const staffSelect = <TStaff extends { id: AnyPgColumn }, TUser extends { name: AnyPgColumn }>(staffTable: TStaff, userTable: TUser): { id: TStaff["id"], name: TUser["name"] } => ({
+  id: staffTable.id,
+  name: userTable.name,
+})
 
 export const childWith = {
   parents: {

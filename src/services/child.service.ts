@@ -1,21 +1,16 @@
 import {
   and,
   eq,
-  gte,
   ilike,
   inArray,
-  lt,
   notInArray,
-  or,
   sql,
   type SQL,
 } from "drizzle-orm";
 import { db, type Db } from "@/db";
 import {
-  attendance,
   child,
   childParent,
-  enrollment,
   type ChildParentTable,
   type ChildTable,
 } from "@/db/schema";
@@ -41,11 +36,15 @@ export type UpdateChild = {
 };
 
 export type FindUnenrolledChildren = FindUnenrolledChildrenSchema & {
-  childrenCentreId: string;
+  enrolledChildIds: string[];
 };
 
-export type FindNotCheckedInChildren = FindNotCheckedInChildrenSchema & {
-  childrenCentreId: string;
+export type FindNotCheckedInChildren = Omit<
+  FindNotCheckedInChildrenSchema,
+  "date"
+> & {
+  enrolledChildIds: string[];
+  checkedInChildIds: string[];
 };
 
 export class ChildService {
@@ -82,22 +81,9 @@ export class ChildService {
 
   private unenrolledFilters(
     table: ChildTable,
-    { name, childrenCentreId }: Pick<FindUnenrolledChildren, "name" | "childrenCentreId">,
+    { name, enrolledChildIds }: Pick<FindUnenrolledChildren, "name" | "enrolledChildIds">,
   ) {
-    const filters: SQL[] = [
-      notInArray(
-        table.id,
-        this.db
-          .select({ id: enrollment.childId })
-          .from(enrollment)
-          .where(
-            and(
-              eq(enrollment.childrenCentreId, childrenCentreId),
-              eq(enrollment.status, "active"),
-            ),
-          ),
-      ),
-    ];
+    const filters: SQL[] = [notInArray(table.id, enrolledChildIds)];
     if (name) filters.push(ilike(table.name, `%${name}%`));
 
     return and(...filters);
@@ -107,42 +93,13 @@ export class ChildService {
     table: ChildTable,
     {
       name,
-      date,
-      childrenCentreId,
-    }: Pick<FindNotCheckedInChildren, "name" | "date" | "childrenCentreId">,
+      enrolledChildIds,
+      checkedInChildIds,
+    }: Pick<FindNotCheckedInChildren, "name" | "enrolledChildIds" | "checkedInChildIds">,
   ) {
-    const start = new Date(`${date}T00:00:00`);
-    const end = new Date(start);
-    end.setDate(end.getDate() + 1);
-
     const filters: SQL[] = [
-      inArray(
-        table.id,
-        this.db
-          .select({ id: enrollment.childId })
-          .from(enrollment)
-          .where(
-            and(
-              eq(enrollment.childrenCentreId, childrenCentreId),
-              eq(enrollment.status, "active"),
-              notInArray(
-                enrollment.id,
-                this.db
-                  .select({ id: attendance.enrollmentId })
-                  .from(attendance)
-                  .where(
-                    or(
-                      eq(attendance.status, "checkedIn"),
-                      and(
-                        gte(attendance.checkedInAt, start),
-                        lt(attendance.checkedInAt, end),
-                      ),
-                    ),
-                  ),
-              ),
-            ),
-          ),
-      ),
+      inArray(table.id, enrolledChildIds),
+      notInArray(table.id, checkedInChildIds),
     ];
     if (name) filters.push(ilike(table.name, `%${name}%`));
 
@@ -226,14 +183,14 @@ export class ChildService {
     perPage,
     paginate,
     name,
-    childrenCentreId,
+    enrolledChildIds,
   }: FindUnenrolledChildren): Promise<PaginationServiceResponse<Child>> {
     const query = {
       columns: this.columns,
       with: this.with,
       where: {
         RAW: (table: ChildTable) =>
-          this.unenrolledFilters(table, { name, childrenCentreId }) ?? sql`true`,
+          this.unenrolledFilters(table, { name, enrolledChildIds }) ?? sql`true`,
       },
       orderBy: { name: "asc", id: "asc" },
     } as const;
@@ -260,7 +217,7 @@ export class ChildService {
       }),
       this.db.$count(
         this.child,
-        this.unenrolledFilters(this.child, { name, childrenCentreId }),
+        this.unenrolledFilters(this.child, { name, enrolledChildIds }),
       ),
     ]);
 
@@ -280,10 +237,10 @@ export class ChildService {
     perPage,
     paginate,
     name,
-    date,
-    childrenCentreId,
+    enrolledChildIds,
+    checkedInChildIds,
   }: FindNotCheckedInChildren): Promise<PaginationServiceResponse<Child>> {
-    const filters = { name, date, childrenCentreId };
+    const filters = { name, enrolledChildIds, checkedInChildIds };
 
     const query = {
       columns: this.columns,

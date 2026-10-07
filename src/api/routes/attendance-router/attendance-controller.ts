@@ -50,9 +50,16 @@ class AttendanceController {
   async findNotCheckedInChildren(req: Req<{ params: ChildrenCentreAttendancesParamsSchema, query: FindNotCheckedInChildrenSchema }>) {
     const { childrenCentreId } = req.params;
 
+    const { date, ...query } = req.query;
+
     await this.childrenCentreService.findOne(childrenCentreId);
 
-    return this.childService.findNotCheckedIn({ ...req.query, childrenCentreId });
+    const [enrolledChildIds, checkedInChildIds] = await Promise.all([
+      this.enrollmentService.findActiveChildIds(childrenCentreId),
+      this.attendanceService.findCheckedInChildIds(childrenCentreId, date),
+    ]);
+
+    return this.childService.findNotCheckedIn({ ...query, enrolledChildIds, checkedInChildIds });
   }
 
   async findOne(req: Req<{ params: AttendanceParamsSchema }>) {

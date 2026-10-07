@@ -5,6 +5,7 @@ import { member, user } from "@/db/schema/auth.schema";
 import { NotFoundError, BadRequestError } from "@/common/errors";
 import type { PaginationServiceResponse, Staff } from "@/common/types";
 import type { FindStaffSchema } from "@/api/routes/staff-router";
+import { staffSelect } from "./columns";
 
 export interface CreateStaff {
   memberId: string;
@@ -26,10 +27,7 @@ export class StaffService {
   ) {}
 
   private get columns() {
-    return {
-      id: this.staff.id,
-      name: user.name,
-    };
+    return staffSelect(this.staff, user);
   }
 
   private select() {
