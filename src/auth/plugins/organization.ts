@@ -41,7 +41,7 @@ export const owner = ac.newRole({
   parent: ["create", "list", "update"],
   child: ["create", "list", "update", "create:own", "list:own", "update:own"],
   childrenCentre: ["create", "list", "update"],
-  enrollment: ["create", "list", "update"],
+  enrollment: ["create", "list", "update", "list:own"],
   staff: ["create", "list", "delete"],
   attendance: ["create", "list", "update", "list:own"],
   activity: ["create", "list", "update", "list:own"],

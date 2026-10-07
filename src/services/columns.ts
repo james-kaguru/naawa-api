@@ -59,3 +59,15 @@ export const enrollmentWith = {
     columns: childColumns,
   },
 } as const
+
+export const childrenCentreColumns = {
+  id: true,
+  name: true,
+  location: true,
+} as const
+
+export const childEnrollmentWith = {
+  childrenCentre: {
+    columns: childrenCentreColumns,
+  },
+} as const

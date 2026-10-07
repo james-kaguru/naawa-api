@@ -14,9 +14,11 @@ import {
 import type { Req, Res } from "@/common/types";
 import {
   childService,
+  enrollmentService,
   parentService,
   type ParentService,
   type ChildService,
+  type EnrollmentService,
 } from "@/services";
 import { auth } from "@/auth";
 import { ORGANIZATION_ID } from "@/common/constants";
@@ -28,6 +30,7 @@ class ParentController {
   constructor(
     private parentService: ParentService,
     private childService: ChildService,
+    private enrollmentService: EnrollmentService,
   ) {
     bindAll(this);
   }
@@ -101,6 +104,17 @@ class ParentController {
     await this.childService.update(req.params.childId, req.body);
   }
 
+  async findMyChildEnrollments(
+    req: Req<{ params: ParentChildrenParamsSchema }>,
+    res: Res,
+  ) {
+    const parentId = currentParentId(res);
+
+    await this.childService.findByParentId(req.params.childId, parentId);
+
+    return this.enrollmentService.findByChildId(req.params.childId);
+  }
+
   async update(req: Req<{ params: { id: string }; body: UpdateParentSchema }>) {
     await this.parentService.findOne(req.params.id);
 
@@ -133,4 +147,5 @@ class ParentController {
 export const parentController = new ParentController(
   parentService,
   childService,
+  enrollmentService,
 );

@@ -46,6 +46,17 @@ parentRouter.put(
   validate({ params: parentChildrenParamsSchema, body: updateMyChildSchema }),
   handle(parentController.updateMyChild),
 );
+parentRouter.get(
+  "/me/children/:childId/enrollments",
+  requireAuth,
+  authorizationCheck({
+    permissions: {
+      enrollment: ["list:own"],
+    },
+  }),
+  validate({ params: parentChildrenParamsSchema }),
+  handle(parentController.findMyChildEnrollments),
+);
 
 parentRouter.get(
   "/",

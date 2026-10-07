@@ -2,9 +2,9 @@ import { and, eq, ne, sql, type SQL } from "drizzle-orm"
 import { db, type Db } from "@/db"
 import { enrollment, type EnrollmentTable } from "@/db/schema"
 import { NotFoundError, BadRequestError } from "@/common/errors"
-import type { Enrollment, PaginationServiceResponse } from "@/common/types"
+import type { ChildEnrollment, Enrollment, PaginationServiceResponse } from "@/common/types"
 import type { FindEnrollmentsSchema } from "@/api/routes/enrollment-router"
-import { enrollmentColumns, enrollmentWith } from "./columns"
+import { childEnrollmentWith, enrollmentColumns, enrollmentWith } from "./columns"
 
 export interface CreateEnrollment {
   childId: string
@@ -99,6 +99,15 @@ export class EnrollmentService {
     if (!res) throw new NotFoundError(`Enrollment ${id} not found`)
 
     return res
+  }
+
+  async findByChildId(childId: string): Promise<ChildEnrollment[]> {
+    return this.db.query.enrollment.findMany({
+      where: { childId },
+      columns: this.columns,
+      with: childEnrollmentWith,
+      orderBy: { startDate: "desc", id: "asc" },
+    })
   }
 
   async findActiveChildIds(childrenCentreId: string): Promise<string[]> {

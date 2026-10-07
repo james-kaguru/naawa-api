@@ -1,22 +1,26 @@
-import type { ActivityType, AttendanceStatus, EnrollmentStatus } from "@/db/schema";
+import type {
+  ActivityType,
+  AttendanceStatus,
+  EnrollmentStatus,
+} from "@/db/schema";
 
 export interface Member {
-    id: string;
-    name: string;
-    email: string;
-    userId: string;
-    organizationId: string;
-    role: string;
+  id: string;
+  name: string;
+  email: string;
+  userId: string;
+  organizationId: string;
+  role: string;
 }
 
 export interface Parent {
-    id: string;
-    name: string;
-    email: string;
-    memberId: string;
-    phoneNumber: string;
-    address: string;
-    emergencyContact: string;
+  id: string;
+  name: string;
+  email: string;
+  memberId: string;
+  phoneNumber: string;
+  address: string;
+  emergencyContact: string;
 }
 
 export interface Child {
@@ -26,16 +30,23 @@ export interface Child {
   allergies: string;
   specialInstructions: string;
   medicalNotes: string;
-  parents:Parent[]
+  parents: Parent[];
 }
 
-export type PlainChild = Omit<Child,"parents">
+export type PlainChild = Omit<Child, "parents">;
 
 export interface Enrollment {
   id: string;
   child: PlainChild;
   status: EnrollmentStatus;
   startDate: string;
+}
+
+export interface ChildEnrollment {
+  id: string;
+  status: EnrollmentStatus;
+  startDate: string;
+  childrenCentre: ChildrenCentre;
 }
 
 export interface Staff {
@@ -66,7 +77,7 @@ export interface Activity {
 }
 
 export interface ChildrenCentre {
-    name: string;
-    id: string;
-    location: string;
+  name: string;
+  id: string;
+  location: string;
 }
