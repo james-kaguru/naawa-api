@@ -1,12 +1,12 @@
 import { and, count, desc, eq, gte, inArray, lt, or, type SQL } from "drizzle-orm"
 import { alias } from "drizzle-orm/pg-core"
 import { db, type Db } from "@/db"
-import { attendance, child, enrollment, staff, type AttendanceTable } from "@/db/schema"
+import { attendance, child, childrenCentre, enrollment, staff, type AttendanceTable } from "@/db/schema"
 import { member, user } from "@/db/schema/auth.schema"
 import { NotFoundError, BadRequestError } from "@/common/errors"
-import type { Attendance, PaginationServiceResponse } from "@/common/types"
-import type { FindAttendancesSchema } from "@/api/routes/attendance-router"
-import { childSelect, staffSelect } from "./columns"
+import type { Attendance, ChildAttendance, PaginationServiceResponse, Staff } from "@/common/types"
+import type { FindAttendancesSchema, FindChildAttendancesSchema } from "@/api/routes/attendance-router"
+import { childSelect, childrenCentreSelect, staffSelect } from "./columns"
 
 export interface CheckIn {
   enrollmentIds: string[]
@@ -19,6 +19,10 @@ export interface CheckOut {
 
 export type FindAttendances = FindAttendancesSchema & {
   childrenCentreId: string
+}
+
+export type FindChildAttendances = FindChildAttendancesSchema & {
+  childId: string
 }
 
 const checkedInStaff = alias(staff, "checked_in_staff")
@@ -59,15 +63,31 @@ export class AttendanceService {
       .leftJoin(checkedOutUser, eq(checkedOutUser.id, checkedOutMember.userId))
   }
 
-  private toAttendance({ checkedOutBy, ...row }: Awaited<ReturnType<AttendanceService["select"]>>[number]): Attendance {
+  private childSelect() {
+    const { child: _child, ...columns } = this.columns
+
+    return this.db.select({ ...columns, childrenCentre: childrenCentreSelect })
+      .from(this.attendance)
+      .innerJoin(enrollment, eq(enrollment.id, this.attendance.enrollmentId))
+      .innerJoin(childrenCentre, eq(childrenCentre.id, enrollment.childrenCentreId))
+      .innerJoin(checkedInStaff, eq(checkedInStaff.id, this.attendance.checkedInStaffId))
+      .innerJoin(checkedInMember, eq(checkedInMember.id, checkedInStaff.memberId))
+      .innerJoin(checkedInUser, eq(checkedInUser.id, checkedInMember.userId))
+      .leftJoin(checkedOutStaff, eq(checkedOutStaff.id, this.attendance.checkedOutStaffId))
+      .leftJoin(checkedOutMember, eq(checkedOutMember.id, checkedOutStaff.memberId))
+      .leftJoin(checkedOutUser, eq(checkedOutUser.id, checkedOutMember.userId))
+  }
+
+  private toAttendance<TRow extends { checkedOutBy: { id: string | null, name: string | null } }>({ checkedOutBy, ...row }: TRow): Omit<TRow, "checkedOutBy"> & { checkedOutBy: Staff | null } {
     return {
       ...row,
       checkedOutBy: checkedOutBy.id && checkedOutBy.name ? { id: checkedOutBy.id, name: checkedOutBy.name } : null,
     }
   }
 
-  private filters({ childrenCentreId, childId, status, date }: Pick<FindAttendances, "childrenCentreId" | "childId" | "status" | "date">) {
-    const filters: SQL[] = [eq(enrollment.childrenCentreId, childrenCentreId)]
+  private filters({ childrenCentreId, childId, status, date }: Pick<FindAttendances, "childId" | "status" | "date"> & { childrenCentreId?: string | undefined }) {
+    const filters: SQL[] = []
+    if (childrenCentreId) filters.push(eq(enrollment.childrenCentreId, childrenCentreId))
     if (childId) filters.push(eq(enrollment.childId, childId))
     if (status) filters.push(eq(this.attendance.status, status))
     if (date) {
@@ -124,6 +144,38 @@ export class AttendanceService {
     const where = this.filters(filterValues)
 
     const query = this.select()
+      .where(where)
+      .orderBy(desc(this.attendance.checkedInAt), desc(this.attendance.id))
+
+    if (!paginate) {
+      const data = (await query).map((row) => this.toAttendance(row))
+
+      return {
+        data,
+        meta: { page: 1, perPage: data.length, totalPages: 1, totalCount: data.length },
+      }
+    }
+
+    const [rows, [total]] = await Promise.all([
+      query.limit(perPage).offset(perPage * (page - 1)),
+      this.db.select({ totalCount: count() })
+        .from(this.attendance)
+        .innerJoin(enrollment, eq(enrollment.id, this.attendance.enrollmentId))
+        .where(where),
+    ])
+
+    const totalCount = total?.totalCount ?? 0
+
+    return {
+      data: rows.map((row) => this.toAttendance(row)),
+      meta: { page, perPage, totalPages: Math.ceil(totalCount / perPage), totalCount },
+    }
+  }
+
+  async findByChildId({ page, perPage, paginate, ...filterValues }: FindChildAttendances): Promise<PaginationServiceResponse<ChildAttendance>> {
+    const where = this.filters(filterValues)
+
+    const query = this.childSelect()
       .where(where)
       .orderBy(desc(this.attendance.checkedInAt), desc(this.attendance.id))
 

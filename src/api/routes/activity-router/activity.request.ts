@@ -126,3 +126,11 @@ export const findActivitiesSchema = paginationQuerySchema.extend({
 });
 
 export type FindActivitiesSchema = z.infer<typeof findActivitiesSchema>;
+
+export const findChildActivitiesSchema = findActivitiesSchema.omit({
+  childId: true,
+});
+
+export type FindChildActivitiesSchema = z.infer<
+  typeof findChildActivitiesSchema
+>;

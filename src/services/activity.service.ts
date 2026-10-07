@@ -1,11 +1,11 @@
 import { and, count, desc, eq, gte, lt, type SQL } from "drizzle-orm"
 import { db, type Db } from "@/db"
-import { activity, attendance, enrollment, staff, type ActivityTable } from "@/db/schema"
+import { activity, attendance, childrenCentre, enrollment, staff, type ActivityTable } from "@/db/schema"
 import { member, user } from "@/db/schema/auth.schema"
 import { BadRequestError, NotFoundError } from "@/common/errors"
-import type { Activity, PaginationServiceResponse } from "@/common/types"
-import type { CreateActivitySchema, FindActivitiesSchema, UpdateActivitySchema } from "@/api/routes/activity-router"
-import { staffSelect } from "./columns"
+import type { Activity, ChildActivity, PaginationServiceResponse } from "@/common/types"
+import type { CreateActivitySchema, FindActivitiesSchema, FindChildActivitiesSchema, UpdateActivitySchema } from "@/api/routes/activity-router"
+import { childrenCentreSelect, staffSelect } from "./columns"
 import { updateActivityDetailsSchemas, updateNapDetailsSchema } from "@/api/routes/activity-router/activity.request"
 
 type DistributiveOmit<T, K extends PropertyKey> = T extends unknown ? Omit<T, K> : never
@@ -24,6 +24,10 @@ export type FindActivities = FindActivitiesSchema & {
   childrenCentreId: string
 }
 
+
+export type FindChildActivities = FindChildActivitiesSchema & {
+  childId: string
+}
 
 export class ActivityService {
   constructor(private db: Db, private activity: ActivityTable) {
@@ -52,8 +56,20 @@ export class ActivityService {
       .innerJoin(user, eq(user.id, member.userId))
   }
 
-  private filters({ childrenCentreId, attendanceId, childId, type, date }: Pick<FindActivities, "childrenCentreId" | "attendanceId" | "childId" | "type" | "date">) {
-    const filters: SQL[] = [eq(enrollment.childrenCentreId, childrenCentreId)]
+  private childSelect() {
+    return this.db.select({ ...this.columns, childrenCentre: childrenCentreSelect })
+      .from(this.activity)
+      .innerJoin(attendance, eq(attendance.id, this.activity.attendanceId))
+      .innerJoin(enrollment, eq(enrollment.id, attendance.enrollmentId))
+      .innerJoin(childrenCentre, eq(childrenCentre.id, enrollment.childrenCentreId))
+      .innerJoin(staff, eq(staff.id, this.activity.staffId))
+      .innerJoin(member, eq(member.id, staff.memberId))
+      .innerJoin(user, eq(user.id, member.userId))
+  }
+
+  private filters({ childrenCentreId, attendanceId, childId, type, date }: Pick<FindActivities, "attendanceId" | "childId" | "type" | "date"> & { childrenCentreId?: string | undefined }) {
+    const filters: SQL[] = []
+    if (childrenCentreId) filters.push(eq(enrollment.childrenCentreId, childrenCentreId))
     if (attendanceId) filters.push(eq(this.activity.attendanceId, attendanceId))
     if (childId) filters.push(eq(enrollment.childId, childId))
     if (type) filters.push(eq(this.activity.type, type))
@@ -119,6 +135,39 @@ export class ActivityService {
     const where = this.filters(filterValues)
 
     const query = this.select()
+      .where(where)
+      .orderBy(desc(this.activity.createdAt), desc(this.activity.id))
+
+    if (!paginate) {
+      const data = await query
+
+      return {
+        data,
+        meta: { page: 1, perPage: data.length, totalPages: 1, totalCount: data.length },
+      }
+    }
+
+    const [data, [total]] = await Promise.all([
+      query.limit(perPage).offset(perPage * (page - 1)),
+      this.db.select({ totalCount: count() })
+        .from(this.activity)
+        .innerJoin(attendance, eq(attendance.id, this.activity.attendanceId))
+        .innerJoin(enrollment, eq(enrollment.id, attendance.enrollmentId))
+        .where(where),
+    ])
+
+    const totalCount = total?.totalCount ?? 0
+
+    return {
+      data,
+      meta: { page, perPage, totalPages: Math.ceil(totalCount / perPage), totalCount },
+    }
+  }
+
+  async findByChildId({ page, perPage, paginate, ...filterValues }: FindChildActivities): Promise<PaginationServiceResponse<ChildActivity>> {
+    const where = this.filters(filterValues)
+
+    const query = this.childSelect()
       .where(where)
       .orderBy(desc(this.activity.createdAt), desc(this.activity.id))
 

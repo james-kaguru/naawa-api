@@ -1,6 +1,6 @@
 import { eq, sql, type SQL } from "drizzle-orm"
 import type { AnyPgColumn } from "drizzle-orm/pg-core"
-import { child, type ParentTable } from "@/db/schema"
+import { child, childrenCentre, type ParentTable } from "@/db/schema"
 import { member, user } from "@/db/schema/auth.schema"
 
 const parentUserField = (table: ParentTable, field: typeof user.name | typeof user.email) =>
@@ -65,6 +65,12 @@ export const childrenCentreColumns = {
   name: true,
   location: true,
 } as const
+
+export const childrenCentreSelect = {
+  id: childrenCentre.id,
+  name: childrenCentre.name,
+  location: childrenCentre.location,
+}
 
 export const childEnrollmentWith = {
   childrenCentre: {

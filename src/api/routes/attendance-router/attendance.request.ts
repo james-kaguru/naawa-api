@@ -30,6 +30,10 @@ export const findAttendancesSchema = paginationQuerySchema.extend({
 
 export type FindAttendancesSchema = z.infer<typeof findAttendancesSchema>;
 
+export const findChildAttendancesSchema = findAttendancesSchema.omit({ childId: true })
+
+export type FindChildAttendancesSchema = z.infer<typeof findChildAttendancesSchema>;
+
 export const findNotCheckedInChildrenSchema = paginationQuerySchema.extend({
   name: z.string().optional(),
   date: z.iso.date().default(() => new Date().toLocaleDateString("en-CA")),

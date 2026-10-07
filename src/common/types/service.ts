@@ -65,6 +65,10 @@ export interface Attendance {
   checkedOutBy: Staff | null;
 }
 
+export type ChildAttendance = Omit<Attendance, "child"> & {
+  childrenCentre: ChildrenCentre;
+}
+
 export interface Activity {
   id: string;
   attendanceId: string;
@@ -74,6 +78,10 @@ export interface Activity {
   staff: Staff;
   createdAt: Date;
   updatedAt: Date;
+}
+
+export type ChildActivity = Activity & {
+  childrenCentre: ChildrenCentre;
 }
 
 export interface ChildrenCentre {

@@ -13,9 +13,13 @@ import {
 } from "../../middlewares/auth.middleware.ts";
 import type { Req, Res } from "@/common/types";
 import {
+  activityService,
+  attendanceService,
   childService,
   enrollmentService,
   parentService,
+  type ActivityService,
+  type AttendanceService,
   type ParentService,
   type ChildService,
   type EnrollmentService,
@@ -25,12 +29,16 @@ import { ORGANIZATION_ID } from "@/common/constants";
 import { fromNodeHeaders } from "better-auth/node";
 import { BadRequestError } from "@/common/errors";
 import type { UpdateChildSchema } from "../child-router/child.request.ts";
+import type { FindChildAttendancesSchema } from "../attendance-router/attendance.request.ts";
+import type { FindChildActivitiesSchema } from "../activity-router/activity.request.ts";
 
 class ParentController {
   constructor(
     private parentService: ParentService,
     private childService: ChildService,
     private enrollmentService: EnrollmentService,
+    private attendanceService: AttendanceService,
+    private activityService: ActivityService,
   ) {
     bindAll(this);
   }
@@ -115,6 +123,40 @@ class ParentController {
     return this.enrollmentService.findByChildId(req.params.childId);
   }
 
+  async findMyChildAttendances(
+    req: Req<{
+      params: ParentChildrenParamsSchema;
+      query: FindChildAttendancesSchema;
+    }>,
+    res: Res,
+  ) {
+    const parentId = currentParentId(res);
+
+    await this.childService.findByParentId(req.params.childId, parentId);
+
+    return this.attendanceService.findByChildId({
+      ...req.query,
+      childId: req.params.childId,
+    });
+  }
+
+  async findMyChildActivities(
+    req: Req<{
+      params: ParentChildrenParamsSchema;
+      query: FindChildActivitiesSchema;
+    }>,
+    res: Res,
+  ) {
+    const parentId = currentParentId(res);
+
+    await this.childService.findByParentId(req.params.childId, parentId);
+
+    return this.activityService.findByChildId({
+      ...req.query,
+      childId: req.params.childId,
+    });
+  }
+
   async update(req: Req<{ params: { id: string }; body: UpdateParentSchema }>) {
     await this.parentService.findOne(req.params.id);
 
@@ -148,4 +190,6 @@ export const parentController = new ParentController(
   parentService,
   childService,
   enrollmentService,
+  attendanceService,
+  activityService,
 );

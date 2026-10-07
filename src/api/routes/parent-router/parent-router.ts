@@ -11,6 +11,8 @@ import {
   updateMyChildSchema,
   updateParentSchema,
 } from "./parent.request";
+import { findChildAttendancesSchema } from "../attendance-router/attendance.request";
+import { findChildActivitiesSchema } from "../activity-router/activity.request";
 
 const parentRouter: Router = Router();
 
@@ -56,6 +58,34 @@ parentRouter.get(
   }),
   validate({ params: parentChildrenParamsSchema }),
   handle(parentController.findMyChildEnrollments),
+);
+parentRouter.get(
+  "/me/children/:childId/attendances",
+  requireAuth,
+  authorizationCheck({
+    permissions: {
+      attendance: ["list:own"],
+    },
+  }),
+  validate({
+    params: parentChildrenParamsSchema,
+    query: findChildAttendancesSchema,
+  }),
+  handle(parentController.findMyChildAttendances),
+);
+parentRouter.get(
+  "/me/children/:childId/activities",
+  requireAuth,
+  authorizationCheck({
+    permissions: {
+      activity: ["list:own"],
+    },
+  }),
+  validate({
+    params: parentChildrenParamsSchema,
+    query: findChildActivitiesSchema,
+  }),
+  handle(parentController.findMyChildActivities),
 );
 
 parentRouter.get(

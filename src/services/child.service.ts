@@ -303,6 +303,7 @@ export class ChildService {
       columns: this.columns,
       with: this.with,
       where: {
+        id,
         RAW: (table: ChildTable) =>
           this.filters(table, { parentId }) ?? sql`true`,
       },
