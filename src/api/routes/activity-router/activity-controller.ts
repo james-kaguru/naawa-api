@@ -30,6 +30,7 @@ class ActivityController {
     return this.activityService.create({
       ...activity,
       attendanceId: attendance.id,
+      attendanceDate: attendance.checkedInAt,
       staffId: currentStaffId(res),
     }, childrenCentreId);
   }
@@ -47,7 +48,12 @@ class ActivityController {
   }
 
   async update(req: Req<{ params: ActivityParamsSchema, body: UpdateActivitySchema }>) {
-    return this.activityService.update(req.params.id, req.params.childrenCentreId, req.body);
+    const { id, childrenCentreId } = req.params;
+
+    const activity = await this.activityService.findOne(id, childrenCentreId);
+    const attendance = await this.attendanceService.findOne(activity.attendanceId, childrenCentreId);
+
+    return this.activityService.update(id, childrenCentreId, { ...req.body, attendanceDate: attendance.checkedInAt });
   }
 }
 

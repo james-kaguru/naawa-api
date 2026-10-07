@@ -11,10 +11,13 @@ type DistributiveOmit<T, K extends PropertyKey> = T extends unknown ? Omit<T, K>
 
 export type CreateActivity = DistributiveOmit<CreateActivitySchema, "childId"> & {
   attendanceId: string
+  attendanceDate: Date
   staffId: string
 }
 
-export type UpdateActivity = UpdateActivitySchema
+export type UpdateActivity = UpdateActivitySchema & {
+  attendanceDate: Date
+}
 
 export type FindActivities = FindActivitiesSchema & {
   childrenCentreId: string
@@ -66,14 +69,25 @@ export class ActivityService {
     return and(...filters)
   }
 
-  private mergeDetails(current: Activity, details: NonNullable<UpdateActivity["details"]>): Record<string, unknown> {
+  private napStartTime(attendanceDate: Date, time: string | undefined): string {
+    if (!time) return new Date().toISOString()
+
+    const [hours = 0, minutes = 0, seconds = 0] = time.split(":").map(Number)
+    const startTime = new Date(attendanceDate)
+    startTime.setHours(hours, minutes, seconds, 0)
+
+    return startTime.toISOString()
+  }
+
+  private mergeDetails(current: Activity, details: NonNullable<UpdateActivity["details"]>, attendanceDate: Date): Record<string, unknown> {
     if (current.type === "nap") {
       const parsed = updateNapDetailsSchema.safeParse(details)
 
       if (!parsed.success) throw new BadRequestError(`Details are not valid for a nap activity`)
 
-      const { hasEnded, ...rest } = parsed.data
-      const merged: Record<string, unknown> = { ...current.details, ...rest }
+      const { hasEnded, startTime } = parsed.data
+      const merged: Record<string, unknown> = { ...current.details }
+      if (startTime) merged.startTime = this.napStartTime(attendanceDate, startTime)
       if (hasEnded === true) merged.endTime = current.details.endTime ?? new Date().toISOString()
       if (hasEnded === false) merged.endTime = null
 
@@ -87,9 +101,9 @@ export class ActivityService {
     return { ...current.details, ...parsed.data }
   }
 
-  async create({ attendanceId, staffId, description, ...activity }: CreateActivity, childrenCentreId: string): Promise<Activity> {
+  async create({ attendanceId, attendanceDate, staffId, description, ...activity }: CreateActivity, childrenCentreId: string): Promise<Activity> {
     const details = activity.type === "nap"
-      ? { startTime: activity.details.startTime ?? new Date().toISOString(), endTime: null }
+      ? { startTime: this.napStartTime(attendanceDate, activity.details.startTime), endTime: null }
       : activity.details
 
     const [res] = await this.db.insert(this.activity).values({
@@ -146,13 +160,13 @@ export class ActivityService {
     return res
   }
 
-  async update(id: string, childrenCentreId: string, { description, details }: UpdateActivity): Promise<Activity> {
+  async update(id: string, childrenCentreId: string, { description, details, attendanceDate }: UpdateActivity): Promise<Activity> {
     const current = await this.findOne(id, childrenCentreId)
 
     await this.db.update(this.activity)
       .set({
         description,
-        details: details === undefined ? undefined : this.mergeDetails(current, details),
+        details: details === undefined ? undefined : this.mergeDetails(current, details, attendanceDate),
       })
       .where(eq(this.activity.id, id))
 
