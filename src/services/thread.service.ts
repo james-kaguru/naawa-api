@@ -18,7 +18,7 @@ export interface CreateThread {
 }
 
 export type FindThreads = PaginationQuery & {
-  memberId: string;
+  memberId?: string | undefined;
 };
 
 export class ThreadService {
@@ -104,7 +104,7 @@ export class ThreadService {
     paginate,
     memberId,
   }: FindThreads): Promise<PaginationServiceResponse<Thread>> {
-    const where = this.hasMember(memberId);
+    const where = memberId ? this.hasMember(memberId) : undefined;
 
     const query = this.select()
       .where(where)
@@ -142,9 +142,14 @@ export class ThreadService {
     };
   }
 
-  async findOne(id: string, memberId: string): Promise<Thread> {
+  async findOne(id: string, memberId?: string): Promise<Thread> {
     const [res] = await this.select()
-      .where(and(eq(this.thread.id, id), this.hasMember(memberId)))
+      .where(
+        and(
+          eq(this.thread.id, id),
+          memberId ? this.hasMember(memberId) : undefined,
+        ),
+      )
       .limit(1);
 
     if (!res) throw new NotFoundError(`Thread ${id} not found`);
