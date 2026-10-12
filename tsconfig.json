@@ -2,7 +2,7 @@
   // Visit https://aka.ms/tsconfig to read more about this file
   "compilerOptions": {
     "rewriteRelativeImportExtensions": true,
-    "rootDir": "./src",
+    "rootDir": "./",
     "outDir": "./dist",
     "noEmitOnError": true,
 
@@ -41,8 +41,8 @@
       "@/*": ["./src/*"],
     },
   },
-  "include": ["*"],
-  "exclude": ["node_modeules"],
+  "include": ["src", "scripts", "*.ts"],
+  "exclude": ["node_modules"],
   "tsc-alias": {
     "resolveFullPaths": true,
   },

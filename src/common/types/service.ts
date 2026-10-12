@@ -84,6 +84,18 @@ export type ChildActivity = Activity & {
   childrenCentre: ChildrenCentre;
 }
 
+export interface ThreadMember {
+  id: string;
+  name: string;
+}
+
+export interface Thread {
+  id: string;
+  memberOne: ThreadMember;
+  memberTwo: ThreadMember;
+  createdAt: Date;
+}
+
 export interface ChildrenCentre {
   name: string;
   id: string;
