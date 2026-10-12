@@ -10,7 +10,7 @@ import { bindAll } from "@/common/utils";
 import {
   currentParentId,
   currentUser,
-} from "../../middlewares/auth.middleware.ts";
+} from "../../middlewares/auth.middleware/index.ts";
 import type { Req, Res } from "@/common/types";
 import {
   activityService,

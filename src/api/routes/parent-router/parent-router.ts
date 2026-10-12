@@ -1,4 +1,4 @@
-import { requireAuth, authorizationCheck, validate } from "@/api/middlewares";
+import { authorizationCheck, validate } from "@/api/middlewares";
 import { SystemRole } from "@/auth/plugins/admin";
 import { handle } from "@/common/utils/index";
 import { Router } from "express";
@@ -18,7 +18,6 @@ const parentRouter: Router = Router();
 
 parentRouter.get(
   "/me/children",
-  requireAuth,
   authorizationCheck({
     permissions: {
       child: ["list:own"],
@@ -28,7 +27,6 @@ parentRouter.get(
 );
 parentRouter.post(
   "/me/children",
-  requireAuth,
   authorizationCheck({
     permissions: {
       child: ["create:own"],
@@ -39,7 +37,6 @@ parentRouter.post(
 );
 parentRouter.put(
   "/me/children/:childId",
-  requireAuth,
   authorizationCheck({
     permissions: {
       child: ["update:own"],
@@ -50,7 +47,6 @@ parentRouter.put(
 );
 parentRouter.get(
   "/me/children/:childId/enrollments",
-  requireAuth,
   authorizationCheck({
     permissions: {
       enrollment: ["list:own"],
@@ -61,7 +57,6 @@ parentRouter.get(
 );
 parentRouter.get(
   "/me/children/:childId/attendances",
-  requireAuth,
   authorizationCheck({
     permissions: {
       attendance: ["list:own"],
@@ -75,7 +70,6 @@ parentRouter.get(
 );
 parentRouter.get(
   "/me/children/:childId/activities",
-  requireAuth,
   authorizationCheck({
     permissions: {
       activity: ["list:own"],
@@ -90,7 +84,6 @@ parentRouter.get(
 
 parentRouter.get(
   "/",
-  requireAuth,
   authorizationCheck({
     permissions: {
       parent: ["list"],
@@ -101,7 +94,6 @@ parentRouter.get(
 );
 parentRouter.get(
   "/:id",
-  requireAuth,
   authorizationCheck({
     permissions: {
       parent: ["list"],
@@ -111,7 +103,6 @@ parentRouter.get(
 );
 parentRouter.post(
   "/",
-  requireAuth,
   authorizationCheck({
     systemRoles: [SystemRole.Admin, SystemRole.SystemAdmin],
     permissions: {
@@ -123,7 +114,6 @@ parentRouter.post(
 );
 parentRouter.put(
   "/:id",
-  requireAuth,
   authorizationCheck({
     systemRoles: [SystemRole.Admin, SystemRole.SystemAdmin],
     permissions: {

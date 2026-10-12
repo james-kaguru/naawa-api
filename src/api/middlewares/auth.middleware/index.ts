@@ -1,7 +1,11 @@
 import { auth, type OrgPermissions } from "@/auth";
 import type { SystemRole } from "@/auth/plugins/admin";
 import { ORGANIZATION_ID } from "@/common/constants";
-import { ForbiddenError, InternalServerError } from "@/common/errors";
+import {
+  ForbiddenError,
+  InternalServerError,
+  UnauthorizedError,
+} from "@/common/errors";
 import type { Req, Res } from "@/common/types/index";
 import { memberService, parentService, staffService } from "@/services";
 import { fromNodeHeaders } from "better-auth/node";
@@ -53,21 +57,11 @@ export async function loadLocals(
   next();
 }
 
-export function requireAuth(_req: Request, res: Response, next: NextFunction) {
-  if (!res.locals.session) {
-    res.status(401).json({
-      message: "Unauthorized",
-      status: 401,
-    });
-    return;
-  }
-
-  next();
-}
-
 export function currentUser(res: Response): Session["user"] {
   if (!res.locals.session) {
-    throw new Error("currentUser() called on a route without requireAuth");
+    throw new InternalServerError(
+      "currentUser() called on a route without authorizationCheck",
+    );
   }
 
   return res.locals.session.user;
@@ -104,8 +98,15 @@ export interface AuthorizationCheck {
 
 export type AuthFn = (req: Req, res: Res) => Promise<void>;
 
-export function authorizationCheck(props: AuthorizationCheck, authFn?: AuthFn) {
+export function authorizationCheck(
+  props: AuthorizationCheck = {},
+  authFn?: AuthFn,
+) {
   return async (req: Req, res: Res, next: NextFunction) => {
+    if (!res.locals.session) {
+      throw new UnauthorizedError("Unauthorized");
+    }
+
     const user = currentUser(res);
     const userRole = user.role;
 
@@ -117,18 +118,20 @@ export function authorizationCheck(props: AuthorizationCheck, authFn?: AuthFn) {
         throw new ForbiddenError("Forbidden");
     }
 
-    const { success } = await auth.api.hasPermission({
-      headers: fromNodeHeaders(req.headers),
-      body: { permissions: props.permissions },
-    });
+    if (props.permissions) {
+      const { success } = await auth.api.hasPermission({
+        headers: fromNodeHeaders(req.headers),
+        body: { permissions: props.permissions },
+      });
 
-    if (!success) throw new ForbiddenError("Forbidden");
+      if (!success) throw new ForbiddenError("Forbidden");
+    }
 
     if (authFn) {
       await authFn(req, res).catch((e) => {
-        if (!(e instanceof InternalServerError)) {
-          throw new ForbiddenError(e.message);
-        }
+        if (e instanceof InternalServerError) throw e;
+
+        throw new ForbiddenError(e.message);
       });
     }
 

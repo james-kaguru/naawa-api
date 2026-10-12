@@ -9,14 +9,13 @@ import {
   findChildrenSchema,
   updateChildSchema,
 } from "./child.request";
-import { requireAuth, authorizationCheck } from "@/api/middlewares";
+import { authorizationCheck } from "@/api/middlewares";
 import { SystemRole } from "@/auth/plugins/admin";
 
 const childRouter: Router = Router();
 
 childRouter.get(
   "/",
-  requireAuth,
   authorizationCheck({
     permissions: {
       child: ["list"],
@@ -27,7 +26,6 @@ childRouter.get(
 );
 childRouter.get(
   "/:id",
-  requireAuth,
   authorizationCheck({
     permissions: {
       child: ["list"],
@@ -38,7 +36,6 @@ childRouter.get(
 );
 childRouter.post(
   "/",
-  requireAuth,
   authorizationCheck({
     permissions: {
       child: ["create"],
@@ -49,7 +46,6 @@ childRouter.post(
 );
 childRouter.put(
   "/:id",
-  requireAuth,
   authorizationCheck({
     permissions: {
       child: ["update"],
@@ -60,7 +56,6 @@ childRouter.put(
 );
 childRouter.post(
   "/:id/parents",
-  requireAuth,
   authorizationCheck({
     permissions: {
       child: ["update"],

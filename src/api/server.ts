@@ -7,7 +7,7 @@ import { validateEnv, getEnv } from '../common/env-validator.ts';
 import { toNodeHandler } from "better-auth/node";
 import { auth } from '../auth/index.ts';
 import cors from "cors";
-import { loadLocals } from './middlewares/auth.middleware.ts';
+import { loadLocals } from './middlewares/auth.middleware/index.ts';
 import errorMiddleware from './middlewares/error.middleware.ts';
 
 

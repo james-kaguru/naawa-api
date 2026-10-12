@@ -10,13 +10,12 @@ import {
   findUnenrolledChildrenSchema,
   updateEnrollmentSchema,
 } from "./enrollment.request";
-import { requireAuth, authorizationCheck } from "@/api/middlewares";
+import { authorizationCheck } from "@/api/middlewares";
 
 const enrollmentRouter: Router = Router({ mergeParams: true });
 
 enrollmentRouter.get(
   "/",
-  requireAuth,
   authorizationCheck({
     permissions: {
       enrollment: ["list"],
@@ -30,7 +29,6 @@ enrollmentRouter.get(
 );
 enrollmentRouter.get(
   "/unenrolled",
-  requireAuth,
   authorizationCheck({
     permissions: {
       enrollment: ["list"],
@@ -45,7 +43,6 @@ enrollmentRouter.get(
 );
 enrollmentRouter.get(
   "/:id",
-  requireAuth,
   authorizationCheck({
     permissions: {
       enrollment: ["list"],
@@ -56,7 +53,6 @@ enrollmentRouter.get(
 );
 enrollmentRouter.post(
   "/",
-  requireAuth,
   authorizationCheck({
     permissions: {
       enrollment: ["create"],
@@ -70,7 +66,6 @@ enrollmentRouter.post(
 );
 enrollmentRouter.put(
   "/:id",
-  requireAuth,
   authorizationCheck({
     permissions: {
       enrollment: ["update"],

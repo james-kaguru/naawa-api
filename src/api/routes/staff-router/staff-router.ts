@@ -8,13 +8,12 @@ import {
   findStaffSchema,
   staffParamsSchema,
 } from "./staff.request";
-import { requireAuth, authorizationCheck } from "@/api/middlewares";
+import { authorizationCheck } from "@/api/middlewares";
 
 const staffRouter: Router = Router({ mergeParams: true });
 
 staffRouter.get(
   "/",
-  requireAuth,
   authorizationCheck({
     permissions: {
       staff: ["list"],
@@ -25,7 +24,6 @@ staffRouter.get(
 );
 staffRouter.get(
   "/:id",
-  requireAuth,
   authorizationCheck({
     permissions: {
       staff: ["list"],
@@ -36,7 +34,6 @@ staffRouter.get(
 );
 staffRouter.post(
   "/",
-  requireAuth,
   authorizationCheck({
     permissions: {
       staff: ["create"],
@@ -47,7 +44,6 @@ staffRouter.post(
 );
 staffRouter.delete(
   "/:id",
-  requireAuth,
   authorizationCheck({
     permissions: {
       staff: ["delete"],

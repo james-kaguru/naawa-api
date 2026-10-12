@@ -2,7 +2,6 @@ import { Router } from "express";
 import { messageController, threadController } from "./controllers";
 import { handle } from "@/common/utils/index";
 import {
-  requireAuth,
   authorizationCheck,
   currentMemberId,
 } from "@/api/middlewares";
@@ -39,7 +38,6 @@ async function threadParticipantCheck(
 
 threadRouter.get(
   "/me",
-  requireAuth,
   authorizationCheck({
     permissions: {
       message: ["list:own"],
@@ -50,7 +48,6 @@ threadRouter.get(
 );
 threadRouter.post(
   "/me",
-  requireAuth,
   authorizationCheck({
     permissions: {
       message: ["create:own"],
@@ -61,7 +58,6 @@ threadRouter.post(
 );
 threadRouter.get(
   "/me/:threadId",
-  requireAuth,
   authorizationCheck(
     {
       permissions: {
@@ -75,7 +71,6 @@ threadRouter.get(
 );
 threadRouter.get(
   "/me/:threadId/messages",
-  requireAuth,
   authorizationCheck({
     permissions: {
       message: ["list:own"],
@@ -86,7 +81,6 @@ threadRouter.get(
 );
 threadRouter.post(
   "/me/:threadId/messages",
-  requireAuth,
   authorizationCheck({
     permissions: {
       message: ["create:own"],
@@ -97,7 +91,6 @@ threadRouter.post(
 );
 threadRouter.put(
   "/me/:threadId/messages/read",
-  requireAuth,
   authorizationCheck({
     permissions: {
       message: ["update:own"],
@@ -109,7 +102,6 @@ threadRouter.put(
 
 threadRouter.get(
   "/",
-  requireAuth,
   authorizationCheck({
     permissions: {
       message: ["list"],
@@ -120,7 +112,6 @@ threadRouter.get(
 );
 threadRouter.get(
   "/:threadId",
-  requireAuth,
   authorizationCheck({
     permissions: {
       message: ["list"],
@@ -131,7 +122,6 @@ threadRouter.get(
 );
 threadRouter.get(
   "/:threadId/messages",
-  requireAuth,
   authorizationCheck({
     permissions: {
       message: ["list"],
