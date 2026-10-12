@@ -4,8 +4,11 @@ import { handle } from "@/common/utils/index";
 import { requireAuth } from "@/api/middlewares";
 import { validate } from "@/api/middlewares/validate.middleware";
 import {
+  createMessageSchema,
   createThreadSchema,
+  findMessagesSchema,
   findThreadsSchema,
+  threadMessagesParamsSchema,
   threadParamsSchema,
 } from "./thread.request";
 
@@ -28,6 +31,25 @@ threadRouter.post(
   requireAuth,
   validate({ body: createThreadSchema }),
   handle(threadController.create, 201),
+);
+
+threadRouter.get(
+  "/:threadId/messages",
+  requireAuth,
+  validate({ params: threadMessagesParamsSchema, query: findMessagesSchema }),
+  handle(threadController.findMessages),
+);
+threadRouter.post(
+  "/:threadId/messages",
+  requireAuth,
+  validate({ params: threadMessagesParamsSchema, body: createMessageSchema }),
+  handle(threadController.createMessage, 201),
+);
+threadRouter.put(
+  "/:threadId/messages/read",
+  requireAuth,
+  validate({ params: threadMessagesParamsSchema }),
+  handle(threadController.markMessagesAsRead),
 );
 
 export { threadRouter };
