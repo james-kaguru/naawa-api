@@ -21,7 +21,9 @@ class MessageController {
     bindAll(this);
   }
 
-  async find(req: Req<{ params: ThreadParamsSchema, query: FindMessagesSchema }>) {
+  async find(
+    req: Req<{ params: ThreadParamsSchema; query: FindMessagesSchema }>,
+  ) {
     const { threadId } = req.params;
 
     await this.threadService.findOne(threadId);
@@ -29,7 +31,10 @@ class MessageController {
     return this.messageService.find({ ...req.query, threadId });
   }
 
-  async createMyThreadMessage(req: Req<{ params: ThreadParamsSchema, body: CreateMessageSchema }>, res: Res) {
+  async createMyThreadMessage(
+    req: Req<{ params: ThreadParamsSchema; body: CreateMessageSchema }>,
+    res: Res,
+  ) {
     const { threadId } = req.params;
     const memberId = currentMemberId(res);
 
@@ -42,7 +47,10 @@ class MessageController {
     });
   }
 
-  async findMyThreadMessages(req: Req<{ params: ThreadParamsSchema, query: FindMessagesSchema }>, res: Res) {
+  async findMyThreadMessages(
+    req: Req<{ params: ThreadParamsSchema; query: FindMessagesSchema }>,
+    res: Res,
+  ) {
     const { threadId } = req.params;
 
     await this.threadService.findOne(threadId, currentMemberId(res));
@@ -50,7 +58,10 @@ class MessageController {
     return this.messageService.find({ ...req.query, threadId });
   }
 
-  async markMyThreadMessagesAsRead(req: Req<{ params: ThreadParamsSchema }>, res: Res) {
+  async markMyThreadMessagesAsRead(
+    req: Req<{ params: ThreadParamsSchema }>,
+    res: Res,
+  ) {
     const { threadId } = req.params;
     const memberId = currentMemberId(res);
 
@@ -62,4 +73,7 @@ class MessageController {
   }
 }
 
-export const messageController = new MessageController(messageService, threadService);
+export const messageController = new MessageController(
+  messageService,
+  threadService,
+);
