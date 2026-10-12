@@ -1,11 +1,9 @@
 import type {
-  CreateMessageSchema,
   CreateThreadSchema,
-  FindMessagesSchema,
+  FindMyThreadsSchema,
   FindThreadsSchema,
-  ThreadMessagesParamsSchema,
   ThreadParamsSchema,
-} from "./thread.request.ts";
+} from "../thread.request.ts";
 import { bindAll } from "@/common/utils";
 import type { Req, Res } from "@/common/types";
 import {
@@ -28,7 +26,15 @@ class ThreadController {
     bindAll(this);
   }
 
-  async create(req: Req<{ body: CreateThreadSchema }>, res: Res) {
+  async find(req: Req<{ query: FindThreadsSchema }>) {
+    return this.threadService.find(req.query);
+  }
+
+  async findOne(req: Req<{ params: ThreadParamsSchema }>) {
+    return this.threadService.findOne(req.params.id);
+  }
+
+  async createMyThread(req: Req<{ body: CreateThreadSchema }>, res: Res) {
     const { memberId, body } = req.body;
     const senderId = currentMemberId(res);
 
@@ -48,44 +54,12 @@ class ThreadController {
     return thread;
   }
 
-  async find(req: Req<{ query: FindThreadsSchema }>, res: Res) {
+  async findMyThreads(req: Req<{ query: FindMyThreadsSchema }>, res: Res) {
     return this.threadService.find({ ...req.query, memberId: currentMemberId(res) });
   }
 
-  async findOne(req: Req<{ params: ThreadParamsSchema }>, res: Res) {
+  async findMyThread(req: Req<{ params: ThreadParamsSchema }>, res: Res) {
     return this.threadService.findOne(req.params.id, currentMemberId(res));
-  }
-
-  async createMessage(req: Req<{ params: ThreadMessagesParamsSchema, body: CreateMessageSchema }>, res: Res) {
-    const { threadId } = req.params;
-    const memberId = currentMemberId(res);
-
-    await this.threadService.findOne(threadId, memberId);
-
-    return this.messageService.create({
-      threadId,
-      senderId: memberId,
-      body: req.body.body,
-    });
-  }
-
-  async findMessages(req: Req<{ params: ThreadMessagesParamsSchema, query: FindMessagesSchema }>, res: Res) {
-    const { threadId } = req.params;
-
-    await this.threadService.findOne(threadId, currentMemberId(res));
-
-    return this.messageService.find({ ...req.query, threadId });
-  }
-
-  async markMessagesAsRead(req: Req<{ params: ThreadMessagesParamsSchema }>, res: Res) {
-    const { threadId } = req.params;
-    const memberId = currentMemberId(res);
-
-    await this.threadService.findOne(threadId, memberId);
-
-    const count = await this.messageService.markAsRead(threadId, memberId);
-
-    return { count };
   }
 }
 

@@ -1,3 +1,3 @@
 export * from "./thread-router"
-export * from "./thread-controller"
+export * from "./controllers"
 export * from "./thread.request"

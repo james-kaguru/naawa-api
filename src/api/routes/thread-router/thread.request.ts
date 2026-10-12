@@ -14,9 +14,15 @@ export const createThreadSchema = z.object({
 
 export type CreateThreadSchema = z.infer<typeof createThreadSchema>;
 
-export const findThreadsSchema = paginationQuerySchema;
+export const findThreadsSchema = paginationQuerySchema.extend({
+  memberId: z.string().trim().min(1).optional(),
+});
 
 export type FindThreadsSchema = z.infer<typeof findThreadsSchema>;
+
+export const findMyThreadsSchema = paginationQuerySchema;
+
+export type FindMyThreadsSchema = z.infer<typeof findMyThreadsSchema>;
 
 export const threadMessagesParamsSchema = z.object({
   threadId: z.uuid(),
