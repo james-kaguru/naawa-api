@@ -1,10 +1,7 @@
 import { Router } from "express";
 import { messageController, threadController } from "./controllers";
 import { handle } from "@/common/utils/index";
-import {
-  authorizationCheck,
-  currentMemberId,
-} from "@/api/middlewares";
+import { authorizationCheck, currentMemberId } from "@/api/middlewares";
 import { validate } from "@/api/middlewares/validate.middleware";
 import {
   createMessageSchema,
@@ -20,22 +17,7 @@ import { threadService } from "@/services";
 
 const threadRouter: Router = Router();
 
-async function threadParticipantCheck(
-  req: Req<{ params: { threadId: string } }>,
-  res: Res,
-): Promise<void> {
-  const memberId = currentMemberId(res);
-
-  const threadId = req.params.threadId;
-
-  if (threadId === undefined)
-    throw new InternalServerError(
-      `route ${req.url} doesnt have threadId param`,
-    );
-
-  await threadService.findOne(threadId, memberId);
-}
-
+// thread participant routes
 threadRouter.get(
   "/me",
   authorizationCheck({
@@ -71,35 +53,45 @@ threadRouter.get(
 );
 threadRouter.get(
   "/me/:threadId/messages",
-  authorizationCheck({
-    permissions: {
-      message: ["list:own"],
+  authorizationCheck(
+    {
+      permissions: {
+        message: ["list:own"],
+      },
     },
-  }),
+    threadParticipantCheck,
+  ),
   validate({ params: threadParamsSchema, query: findMessagesSchema }),
   handle(messageController.findMyThreadMessages),
 );
 threadRouter.post(
   "/me/:threadId/messages",
-  authorizationCheck({
-    permissions: {
-      message: ["create:own"],
+  authorizationCheck(
+    {
+      permissions: {
+        message: ["create:own"],
+      },
     },
-  }),
+    threadParticipantCheck,
+  ),
   validate({ params: threadParamsSchema, body: createMessageSchema }),
   handle(messageController.createMyThreadMessage, 201),
 );
 threadRouter.put(
   "/me/:threadId/messages/read",
-  authorizationCheck({
-    permissions: {
-      message: ["update:own"],
+  authorizationCheck(
+    {
+      permissions: {
+        message: ["update:own"],
+      },
     },
-  }),
+    threadParticipantCheck,
+  ),
   validate({ params: threadParamsSchema }),
   handle(messageController.markMyThreadMessagesAsRead),
 );
 
+// owner routes
 threadRouter.get(
   "/",
   authorizationCheck({
@@ -132,3 +124,6 @@ threadRouter.get(
 );
 
 export { threadRouter };
+function threadParticipantCheck(req: Req, res: Res): Promise<void> {
+  throw new Error("Function not implemented.");
+}
