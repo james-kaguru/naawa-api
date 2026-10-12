@@ -2,7 +2,7 @@ import { paginationQuerySchema } from "@/api/schemas";
 import { z } from "zod";
 
 export const threadParamsSchema = z.object({
-  id: z.uuid(),
+  threadId: z.uuid(),
 });
 
 export type ThreadParamsSchema = z.infer<typeof threadParamsSchema>;
@@ -23,12 +23,6 @@ export type FindThreadsSchema = z.infer<typeof findThreadsSchema>;
 export const findMyThreadsSchema = paginationQuerySchema;
 
 export type FindMyThreadsSchema = z.infer<typeof findMyThreadsSchema>;
-
-export const threadMessagesParamsSchema = z.object({
-  threadId: z.uuid(),
-});
-
-export type ThreadMessagesParamsSchema = z.infer<typeof threadMessagesParamsSchema>;
 
 export const createMessageSchema = z.object({
   body: z.string().trim().min(1),

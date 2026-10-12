@@ -1,7 +1,11 @@
 import { Router } from "express";
 import { messageController, threadController } from "./controllers";
 import { handle } from "@/common/utils/index";
-import { requireAuth, authorizationCheck } from "@/api/middlewares";
+import {
+  requireAuth,
+  authorizationCheck,
+  currentMemberId,
+} from "@/api/middlewares";
 import { validate } from "@/api/middlewares/validate.middleware";
 import {
   createMessageSchema,
@@ -9,11 +13,29 @@ import {
   findMessagesSchema,
   findMyThreadsSchema,
   findThreadsSchema,
-  threadMessagesParamsSchema,
   threadParamsSchema,
 } from "./thread.request";
+import type { Req, Res } from "@/common/types";
+import { InternalServerError } from "@/common/errors";
+import { threadService } from "@/services";
 
 const threadRouter: Router = Router();
+
+async function threadParticipantCheck(
+  req: Req<{ params: { threadId: string } }>,
+  res: Res,
+): Promise<void> {
+  const memberId = currentMemberId(res);
+
+  const threadId = req.params.threadId;
+
+  if (threadId === undefined)
+    throw new InternalServerError(
+      `route ${req.url} doesnt have threadId param`,
+    );
+
+  await threadService.findOne(threadId, memberId);
+}
 
 threadRouter.get(
   "/me",
@@ -38,13 +60,16 @@ threadRouter.post(
   handle(threadController.createMyThread, 201),
 );
 threadRouter.get(
-  "/me/:id",
+  "/me/:threadId",
   requireAuth,
-  authorizationCheck({
-    permissions: {
-      message: ["list:own"],
+  authorizationCheck(
+    {
+      permissions: {
+        message: ["list:own"],
+      },
     },
-  }),
+    threadParticipantCheck,
+  ),
   validate({ params: threadParamsSchema }),
   handle(threadController.findMyThread),
 );
@@ -56,7 +81,7 @@ threadRouter.get(
       message: ["list:own"],
     },
   }),
-  validate({ params: threadMessagesParamsSchema, query: findMessagesSchema }),
+  validate({ params: threadParamsSchema, query: findMessagesSchema }),
   handle(messageController.findMyThreadMessages),
 );
 threadRouter.post(
@@ -67,7 +92,7 @@ threadRouter.post(
       message: ["create:own"],
     },
   }),
-  validate({ params: threadMessagesParamsSchema, body: createMessageSchema }),
+  validate({ params: threadParamsSchema, body: createMessageSchema }),
   handle(messageController.createMyThreadMessage, 201),
 );
 threadRouter.put(
@@ -78,7 +103,7 @@ threadRouter.put(
       message: ["update:own"],
     },
   }),
-  validate({ params: threadMessagesParamsSchema }),
+  validate({ params: threadParamsSchema }),
   handle(messageController.markMyThreadMessagesAsRead),
 );
 
@@ -94,7 +119,7 @@ threadRouter.get(
   handle(threadController.find),
 );
 threadRouter.get(
-  "/:id",
+  "/:threadId",
   requireAuth,
   authorizationCheck({
     permissions: {
@@ -112,7 +137,7 @@ threadRouter.get(
       message: ["list"],
     },
   }),
-  validate({ params: threadMessagesParamsSchema, query: findMessagesSchema }),
+  validate({ params: threadParamsSchema, query: findMessagesSchema }),
   handle(messageController.find),
 );
 

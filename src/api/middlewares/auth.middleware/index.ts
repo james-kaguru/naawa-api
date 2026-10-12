@@ -9,16 +9,6 @@ import type { NextFunction, Request, Response } from "express";
 
 type Session = typeof auth.$Infer.Session;
 
-declare global {
-  namespace Express {
-    interface Locals {
-      session?: Session;
-      memberId?: string;
-      parentId?: string;
-    }
-  }
-}
-
 export async function loadLocals(
   req: Request,
   res: Response,
@@ -112,7 +102,9 @@ export interface AuthorizationCheck {
   permissions: OrgPermissions;
 }
 
-export function authorizationCheck(props: AuthorizationCheck) {
+export type AuthFn = (req: Req, res: Res) => Promise<void>;
+
+export function authorizationCheck(props: AuthorizationCheck, authFn?: AuthFn) {
   return async (req: Req, res: Res, next: NextFunction) => {
     const user = currentUser(res);
     const userRole = user.role;
@@ -131,6 +123,14 @@ export function authorizationCheck(props: AuthorizationCheck) {
     });
 
     if (!success) throw new ForbiddenError("Forbidden");
+
+    if (authFn) {
+      await authFn(req, res).catch((e) => {
+        if (!(e instanceof InternalServerError)) {
+          throw new ForbiddenError(e.message);
+        }
+      });
+    }
 
     next();
   };

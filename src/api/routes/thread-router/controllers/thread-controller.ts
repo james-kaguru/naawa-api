@@ -31,7 +31,7 @@ class ThreadController {
   }
 
   async findOne(req: Req<{ params: ThreadParamsSchema }>) {
-    return this.threadService.findOne(req.params.id);
+    return this.threadService.findOne(req.params.threadId);
   }
 
   async createMyThread(req: Req<{ body: CreateThreadSchema }>, res: Res) {
@@ -59,7 +59,7 @@ class ThreadController {
   }
 
   async findMyThread(req: Req<{ params: ThreadParamsSchema }>, res: Res) {
-    return this.threadService.findOne(req.params.id, currentMemberId(res));
+    return this.threadService.findOne(req.params.threadId, currentMemberId(res));
   }
 }
 
