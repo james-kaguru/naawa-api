@@ -1,4 +1,7 @@
 import type { Env } from "@/common/env-validator";
+import { auth } from "@/auth";
+
+type Session = typeof auth.$Infer.Session;
 
 declare global {
   namespace NodeJS {

@@ -1,8 +1,6 @@
-import { auth, type OrgPermissions } from "@/auth";
-import type { SystemRole } from "@/auth/plugins/admin";
+import { auth } from "@/auth";
 import { ORGANIZATION_ID } from "@/common/constants";
-import { ForbiddenError, InternalServerError } from "@/common/errors";
-import type { Req, Res } from "@/common/types/index";
+import { InternalServerError } from "@/common/errors";
 import { memberService, parentService, staffService } from "@/services";
 import { fromNodeHeaders } from "better-auth/node";
 import type { NextFunction, Request, Response } from "express";
@@ -51,4 +49,38 @@ export async function loadLocals(
   }
 
   next();
+}
+
+export function currentUser(res: Response): Session["user"] {
+  if (!res.locals.session) {
+    throw new InternalServerError(
+      "currentUser() called on a route without authorizationCheck",
+    );
+  }
+
+  return res.locals.session.user;
+}
+
+export function currentMemberId(res: Response): string {
+  if (!res.locals.memberId) {
+    throw new InternalServerError(`Member id was not set`);
+  }
+
+  return res.locals.memberId;
+}
+
+export function currentStaffId(res: Response): string {
+  if (!res.locals.staffId) {
+    throw new InternalServerError(`Staff id was not set`);
+  }
+
+  return res.locals.staffId;
+}
+
+export function currentParentId(res: Response): string {
+  if (!res.locals.parentId) {
+    throw new InternalServerError(`Parent id was not set`);
+  }
+
+  return res.locals.parentId;
 }
