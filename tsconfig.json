@@ -41,7 +41,8 @@
       "@/*": ["./src/*"],
     },
   },
-  "include": ["src", "scripts"],
+  "include": ["*"],
+  "exclude": ["node_modeules"],
   "tsc-alias": {
     "resolveFullPaths": true,
   },
