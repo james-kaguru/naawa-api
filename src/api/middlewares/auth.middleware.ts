@@ -13,6 +13,7 @@ declare global {
   namespace Express {
     interface Locals {
       session?: Session;
+      memberId?: string;
       parentId?: string;
     }
   }
@@ -41,6 +42,8 @@ export async function loadLocals(
       session.user.id,
       ORGANIZATION_ID,
     );
+
+    res.locals.memberId = member.id;
 
     await parentService
       .findByMemberId(member.id)
@@ -78,6 +81,14 @@ export function currentUser(res: Response): Session["user"] {
   }
 
   return res.locals.session.user;
+}
+
+export function currentMemberId(res: Response): string {
+  if (!res.locals.memberId) {
+    throw new InternalServerError(`Member id was not set`);
+  }
+
+  return res.locals.memberId;
 }
 
 export function currentStaffId(res: Response): string {
