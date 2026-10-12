@@ -33,10 +33,6 @@ export const member = ac.newRole({
   ...memberAc.statements,
 });
 
-export const admin = ac.newRole({
-  ...adminAc.statements,
-});
-
 export const owner = ac.newRole({
   ...ownerAc.statements,
   parent: ["create", "list", "update"],
@@ -54,7 +50,6 @@ export const organizationPlugin = organization({
   ac,
   roles: {
     owner,
-    admin,
     member,
   },
   dynamicAccessControl: {
