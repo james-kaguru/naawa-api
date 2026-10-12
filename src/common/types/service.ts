@@ -96,6 +96,15 @@ export interface Thread {
   createdAt: Date;
 }
 
+export interface Message {
+  id: string;
+  threadId: string;
+  sender: ThreadMember;
+  body: string;
+  readAt: Date | null;
+  createdAt: Date;
+}
+
 export interface ChildrenCentre {
   name: string;
   id: string;
