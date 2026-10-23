@@ -33,19 +33,15 @@ export async function loadLocals(
 
     res.locals.memberId = member.id;
 
-    await parentService
-      .findByMemberId(member.id)
-      .then((parent) => {
-        res.locals.parentId = parent.id;
-      })
-      .catch(() => {});
+    if (session.user.role === "parent") {
+      const parent = await parentService.findByMemberId(member.id);
 
-    await staffService
-      .findByMemberId(member.id)
-      .then((staff) => {
-        res.locals.staffId = staff.id;
-      })
-      .catch(() => {});
+      res.locals.parentId = parent.id;
+    } else if (session.user.role === "staff") {
+      const staff = await staffService.findByMemberId(member.id);
+
+      res.locals.staffId = staff.id;
+    }
   }
 
   next();
