@@ -11,7 +11,7 @@ import {
   type MessageService,
   type ThreadService,
 } from "@/services";
-import { currentMemberId } from "@/api/middlewares/auth.middleware";
+import type { Sender } from "@/db/schema";
 
 class MessageController {
   constructor(
@@ -24,50 +24,47 @@ class MessageController {
   async find(
     req: Req<{ params: MessageParamsSchema; query: FindMessagesSchema }>,
   ) {
-    const { threadId } = req.params;
+    const { threadId, childrenCentreId } = req.params;
 
-    await this.threadService.findOne(threadId);
+    await this.threadService.findOne(threadId, childrenCentreId);
 
     return this.messageService.find({ ...req.query, threadId });
   }
 
-  async createMyThreadMessage(
+  async createMyMessage(
     req: Req<{ params: MessageParamsSchema; body: CreateMessageSchema }>,
     res: Res,
   ) {
-    const { threadId } = req.params;
-    const memberId = currentMemberId(res);
+    const { threadId, childrenCentreId } = req.params;
 
-    await this.threadService.findOne(threadId, memberId);
+    await this.threadService.findOne(threadId, childrenCentreId);
+
+    const staffId = res.locals.staffId ?? null;
 
     return this.messageService.create({
       threadId,
-      senderId: memberId,
+      sender: staffId ? "staff" : "parent",
+      staffId,
       body: req.body.body,
     });
-  }
-
-  async findMyThreadMessages(
-    req: Req<{ params: MessageParamsSchema; query: FindMessagesSchema }>,
-    res: Res,
-  ) {
-    const { threadId } = req.params;
-
-    await this.threadService.findOne(threadId, currentMemberId(res));
-
-    return this.messageService.find({ ...req.query, threadId });
   }
 
   async markMyThreadMessagesAsRead(
     req: Req<{ params: MessageParamsSchema }>,
     res: Res,
   ) {
-    const { threadId } = req.params;
-    const memberId = currentMemberId(res);
+    const { threadId, childrenCentreId } = req.params;
 
-    await this.threadService.findOne(threadId, memberId);
+    await this.threadService.findOne(threadId, childrenCentreId);
 
-    const count = await this.messageService.markAsRead(threadId, memberId);
+    const staffId = res.locals.staffId ?? null;
+    const reader = res.locals.staffId ? "staff" : "parent";
+
+    const count = await this.messageService.markAsRead(
+      threadId,
+      staffId,
+      reader,
+    );
 
     return { count };
   }

@@ -2,6 +2,7 @@ import type {
   ActivityType,
   AttendanceStatus,
   EnrollmentStatus,
+  Sender,
 } from "@/db/schema";
 
 export interface Member {
@@ -99,7 +100,8 @@ export interface Thread {
 export interface Message {
   id: string;
   threadId: string;
-  sender: ThreadMember;
+  sender: Sender;
+  staff: ThreadMember | null;
   body: string;
   readAt: Date | null;
   createdAt: Date;

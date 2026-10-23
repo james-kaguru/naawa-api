@@ -39,7 +39,7 @@ messageRouter.post(
     threadAuth,
   ),
   validate({ params: messageParamsSchema, body: createMessageSchema }),
-  handle(messageController.createMyThreadMessage, 201),
+  handle(messageController.createMyMessage, 201),
 );
 
 messageRouter.put(

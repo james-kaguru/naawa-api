@@ -1,21 +1,28 @@
 import { and, count, desc, eq, isNull, ne } from "drizzle-orm";
+import { alias } from "drizzle-orm/pg-core";
 import { db, type Db } from "@/db";
-import { message, type MessageTable, type Sender } from "@/db/schema";
+import { message, staff, type MessageTable, type Sender } from "@/db/schema";
 import { member, user } from "@/db/schema/auth.schema";
 import { NotFoundError } from "@/common/errors";
 import type { Message, PaginationServiceResponse } from "@/common/types";
 import type { PaginationQuery } from "@/api/schemas";
 
+const staffMember = alias(member, "staff_member");
+const staffUser = alias(user, "staff_user");
+
 export interface CreateMessage {
   threadId: string;
   sender: Sender;
   staffId: string | null;
-  parentId: string;
   body: string;
 }
 
 export type FindMessages = PaginationQuery & {
   threadId: string;
+};
+
+type MessageRow = Omit<Message, "staff"> & {
+  staff: { id: string | null; name: string | null };
 };
 
 export class MessageService {
@@ -28,7 +35,8 @@ export class MessageService {
     return {
       id: this.message.id,
       threadId: this.message.threadId,
-      sender: { id: member.id, name: user.name },
+      sender: this.message.sender,
+      staff: { id: staff.id, name: staffUser.name },
       body: this.message.body,
       readAt: this.message.readAt,
       createdAt: this.message.createdAt,
@@ -39,16 +47,30 @@ export class MessageService {
     return this.db
       .select(this.columns)
       .from(this.message)
-      .innerJoin(member, eq(member.id, this.message.senderId))
-      .innerJoin(user, eq(user.id, member.userId));
+      .leftJoin(staff, eq(staff.id, this.message.staffId))
+      .leftJoin(staffMember, eq(staffMember.id, staff.memberId))
+      .leftJoin(staffUser, eq(staffUser.id, staffMember.userId));
   }
 
-  async create({ threadId, senderId, body }: CreateMessage): Promise<Message> {
+  private toMessage({ staff, ...rest }: MessageRow): Message {
+    return {
+      ...rest,
+      staff: staff.id ? { id: staff.id, name: staff.name ?? "" } : null,
+    };
+  }
+
+  async create({
+    threadId,
+    sender,
+    staffId,
+    body,
+  }: CreateMessage): Promise<Message> {
     const [res] = await this.db
       .insert(this.message)
       .values({
         threadId,
-        senderId,
+        sender,
+        staffId,
         body,
       })
       .returning({ id: this.message.id });
@@ -72,7 +94,7 @@ export class MessageService {
       const data = await query;
 
       return {
-        data,
+        data: data.map((row) => this.toMessage(row)),
         meta: {
           page: 1,
           perPage: data.length,
@@ -90,7 +112,7 @@ export class MessageService {
     const totalCount = total?.totalCount ?? 0;
 
     return {
-      data,
+      data: data.map((row) => this.toMessage(row)),
       meta: {
         page,
         perPage,
@@ -107,17 +129,21 @@ export class MessageService {
 
     if (!res) throw new NotFoundError(`Message ${id} not found`);
 
-    return res;
+    return this.toMessage(res);
   }
 
-  async markAsRead(threadId: string, readerId: string): Promise<number> {
+  async markAsRead(
+    threadId: string,
+    staffId: string | null,
+    reader: Sender,
+  ): Promise<number> {
     const res = await this.db
       .update(this.message)
-      .set({ readAt: new Date() })
+      .set({ readAt: new Date(), staffId })
       .where(
         and(
           eq(this.message.threadId, threadId),
-          ne(this.message.senderId, readerId),
+          ne(this.message.sender, reader),
           isNull(this.message.readAt),
         ),
       )
@@ -126,12 +152,12 @@ export class MessageService {
     return res.length;
   }
 
-  async countUnread(threadId: string, readerId: string): Promise<number> {
+  async countUnread(threadId: string, reader: Sender): Promise<number> {
     return this.db.$count(
       this.message,
       and(
         eq(this.message.threadId, threadId),
-        ne(this.message.senderId, readerId),
+        ne(this.message.sender, reader),
         isNull(this.message.readAt),
       ),
     );

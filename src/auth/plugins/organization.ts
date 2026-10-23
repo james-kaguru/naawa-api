@@ -45,7 +45,7 @@ export const owner = ac.newRole({
   activity: ["create", "list", "update", "list:own"],
   incident: ["create", "list", "update", "list:own"],
   thread: ["create", "list", "update", "list:own"],
-  message: ["create:own", "list", "update:own", "list:own"],
+  message: ["create:own", "list", "update:own"],
 });
 
 export const organizationPlugin = organization({
