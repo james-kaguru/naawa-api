@@ -91,8 +91,8 @@ export interface ThreadMember {
 
 export interface Thread {
   id: string;
-  memberOne: ThreadMember;
-  memberTwo: ThreadMember;
+  childrenCentre: ThreadMember;
+  parent: ThreadMember;
   createdAt: Date;
 }
 

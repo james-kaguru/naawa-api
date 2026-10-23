@@ -18,8 +18,8 @@ export const orgPermisstionStatement = {
   attendance: ["create", "list", "update", "list:own"],
   activity: ["create", "list", "update", "list:own"],
   incident: ["create", "list", "update", "list:own"],
-  thread: ["list", "create:own", "list:own", "update:own"],
-  message: ["list", "create:own", "list:own", "update:own"],
+  thread: ["create", "list", "update", "list:own"],
+  message: ["create", "list", "update"],
 } as const;
 
 export type OrgPermissionStatement = typeof orgPermisstionStatement;
@@ -44,8 +44,8 @@ export const owner = ac.newRole({
   attendance: ["create", "list", "update", "list:own"],
   activity: ["create", "list", "update", "list:own"],
   incident: ["create", "list", "update", "list:own"],
-  thread: ["list", "create:own", "list:own", "update:own"],
-  message: ["list", "create:own", "list:own", "update:own"],
+  thread: ["create", "list", "update"],
+  message: ["create", "list", "update"],
 });
 
 export const organizationPlugin = organization({

@@ -1,6 +1,7 @@
 import type {
+  ChildrenCentreThreadParamsSchema,
   CreateThreadSchema,
-  FindMyThreadsSchema,
+  FindParentsThreadsSchema,
   FindThreadsSchema,
   ThreadParamsSchema,
 } from "../thread.request.ts";
@@ -15,7 +16,6 @@ import {
   type ThreadService,
 } from "@/services";
 import {
-  currentMemberId,
   currentParentId,
   currentStaffId,
 } from "@/api/middlewares/auth.middleware";
@@ -24,18 +24,25 @@ import { ORGANIZATION_ID } from "@/common/constants";
 class ThreadController {
   constructor(
     private threadService: ThreadService,
-    private memberService: MemberService,
     private messageService: MessageService,
   ) {
     bindAll(this);
   }
 
-  async find(req: Req<{ query: FindThreadsSchema }>) {
-    return this.threadService.find(req.query);
+  async find(
+    req: Req<{
+      query: FindThreadsSchema;
+      params: ChildrenCentreThreadParamsSchema;
+    }>,
+  ) {
+    return this.threadService.find(req.params.childrenCentreId, req.query);
   }
 
   async findOne(req: Req<{ params: ThreadParamsSchema }>) {
-    return this.threadService.findOne(req.params.threadId);
+    return this.threadService.findOne(
+      req.params.threadId,
+      req.params.childrenCentreId,
+    );
   }
 
   async createMyThread(
@@ -52,7 +59,7 @@ class ThreadController {
 
     if (req.body.sender === "parent") {
       const parentId = currentParentId(res);
-      
+
       await this.messageService.create({
         threadId: thread.id,
         sender: req.body.sender,
@@ -75,23 +82,21 @@ class ThreadController {
     return thread;
   }
 
-  async findMyThreads(req: Req<{ query: FindMyThreadsSchema }>, res: Res) {
-    return this.threadService.find({
+  async findParentThreads(
+    req: Req<{
+      query: FindParentsThreadsSchema;
+      params: ChildrenCentreThreadParamsSchema;
+    }>,
+    res: Res,
+  ) {
+    return this.threadService.find(req.params.childrenCentreId, {
       ...req.query,
-      memberId: currentMemberId(res),
+      parentId: currentParentId(res),
     });
-  }
-
-  async findMyThread(req: Req<{ params: ThreadParamsSchema }>, res: Res) {
-    return this.threadService.findOne(
-      req.params.threadId,
-      currentMemberId(res),
-    );
   }
 }
 
 export const threadController = new ThreadController(
   threadService,
-  memberService,
   messageService,
 );

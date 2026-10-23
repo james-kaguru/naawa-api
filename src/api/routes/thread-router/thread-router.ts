@@ -7,7 +7,7 @@ import {
   createMessageSchema,
   createThreadSchema,
   findMessagesSchema,
-  findMyThreadsSchema,
+  findParentsThreadsSchema,
   findThreadsSchema,
   threadParamsSchema,
 } from "./thread.request";
@@ -17,22 +17,32 @@ import { threadService } from "@/services";
 
 const threadRouter: Router = Router();
 
-// thread participant routes
-// threadRouter.get(
-//   "/me",
-//   authorizationCheck({
-//     permissions: {
-//       message: ["list:own"],
-//     },
-//   }),
-//   validate({ query: findMyThreadsSchema }),
-//   handle(threadController.findMyThreads),
-// );
+threadRouter.get(
+  "/",
+  authorizationCheck({
+    permissions: {
+      thread: ["list"],
+    },
+  }),
+  validate({ query: findThreadsSchema }),
+  handle(threadController.find),
+);
+
+threadRouter.get(
+  "/me",
+  authorizationCheck({
+    permissions: {
+      thread: ["list:own"],
+    },
+  }),
+  validate({ query: findParentsThreadsSchema }),
+  handle(threadController.findParentThreads),
+);
 threadRouter.post(
   "/",
   authorizationCheck({
     permissions: {
-      message: ["create:own"],
+      thread: ["create"],
     },
   }),
   validate({ body: createThreadSchema, params: threadParamsSchema }),

@@ -1,0 +1,1 @@
+- enforce thread & message security to participants only

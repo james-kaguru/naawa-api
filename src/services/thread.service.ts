@@ -1,16 +1,10 @@
-import { and, count, desc, eq, or } from "drizzle-orm";
-import { alias } from "drizzle-orm/pg-core";
+import { and, count, desc, eq, type SQL } from "drizzle-orm";
 import { db, type Db } from "@/db";
-import { thread, type ThreadTable } from "@/db/schema";
+import { childrenCentre, parent, thread, type ThreadTable } from "@/db/schema";
 import { member, user } from "@/db/schema/auth.schema";
-import { BadRequestError, NotFoundError } from "@/common/errors";
+import { NotFoundError } from "@/common/errors";
 import type { PaginationServiceResponse, Thread } from "@/common/types";
 import type { PaginationQuery } from "@/api/schemas";
-
-const memberOne = alias(member, "member_one");
-const memberTwo = alias(member, "member_two");
-const userOne = alias(user, "user_one");
-const userTwo = alias(user, "user_two");
 
 export interface CreateThread {
   childrenCentreId: string;
@@ -18,7 +12,7 @@ export interface CreateThread {
 }
 
 export type FindThreads = PaginationQuery & {
-  memberId?: string | undefined;
+  parentId?: string | undefined;
 };
 
 export class ThreadService {
@@ -30,8 +24,8 @@ export class ThreadService {
   private get columns() {
     return {
       id: this.thread.id,
-      memberOne: { id: memberOne.id, name: userOne.name },
-      memberTwo: { id: memberTwo.id, name: userTwo.name },
+      childrenCentre: { id: childrenCentre.id, name: childrenCentre.name },
+      parent: { id: parent.id, name: user.name },
       createdAt: this.thread.createdAt,
     };
   }
@@ -40,17 +34,13 @@ export class ThreadService {
     return this.db
       .select(this.columns)
       .from(this.thread)
-      .innerJoin(memberOne, eq(memberOne.id, this.thread.memberIdOne))
-      .innerJoin(userOne, eq(userOne.id, memberOne.userId))
-      .innerJoin(memberTwo, eq(memberTwo.id, this.thread.memberIdTwo))
-      .innerJoin(userTwo, eq(userTwo.id, memberTwo.userId));
-  }
-
-  private hasMember(memberId: string) {
-    return or(
-      eq(this.thread.memberIdOne, memberId),
-      eq(this.thread.memberIdTwo, memberId),
-    );
+      .innerJoin(
+        childrenCentre,
+        eq(childrenCentre.id, this.thread.childrenCentreId),
+      )
+      .innerJoin(parent, eq(parent.id, this.thread.parentId))
+      .innerJoin(member, eq(member.id, parent.memberId))
+      .innerJoin(user, eq(user.id, member.userId));
   }
 
   async findOrCreate({
@@ -68,7 +58,7 @@ export class ThreadService {
       )
       .limit(1);
 
-    if (existing) return this.findOne(existing.id);
+    if (existing) return this.findOne(existing.id, childrenCentreId);
 
     const [res] = await this.db
       .insert(this.thread)
@@ -78,16 +68,17 @@ export class ThreadService {
       })
       .returning({ id: this.thread.id });
 
-    return this.findOne(res!.id);
+    return this.findOne(res!.id, childrenCentreId);
   }
 
-  async find({
-    page,
-    perPage,
-    paginate,
-    memberId,
-  }: FindThreads): Promise<PaginationServiceResponse<Thread>> {
-    const where = memberId ? this.hasMember(memberId) : undefined;
+  async find(
+    childrenCentreId: string,
+    { page, perPage, paginate, parentId }: FindThreads,
+  ): Promise<PaginationServiceResponse<Thread>> {
+    const filters: SQL[] = [eq(this.thread.childrenCentreId, childrenCentreId)];
+    if (parentId) filters.push(eq(this.thread.parentId, parentId));
+
+    const where = and(...filters);
 
     const query = this.select()
       .where(where)
@@ -125,12 +116,17 @@ export class ThreadService {
     };
   }
 
-  async findOne(id: string, memberId?: string): Promise<Thread> {
+  async findOne(
+    id: string,
+    childrenCentreId: string,
+    parentId?: string,
+  ): Promise<Thread> {
     const [res] = await this.select()
       .where(
         and(
           eq(this.thread.id, id),
-          memberId ? this.hasMember(memberId) : undefined,
+          eq(this.thread.childrenCentreId, childrenCentreId),
+          parentId ? eq(this.thread.parentId, parentId) : undefined,
         ),
       )
       .limit(1);
