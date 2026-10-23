@@ -177,8 +177,8 @@ export const thread = pgTable("threads", {
 
 export type ThreadTable = typeof thread;
 
-export const senderType = pgEnum("sender_type", ["parent", "staff"]);
-export type SenderType = (typeof senderType.enumValues)[number];
+export const sender = pgEnum("sender", ["parent", "staff"]);
+export type Sender = (typeof sender.enumValues)[number];
 
 export const message = pgTable("messages", {
   id: uuid().primaryKey().defaultRandom(),
@@ -187,7 +187,7 @@ export const message = pgTable("messages", {
     .references(() => thread.id, {
       onDelete: "restrict",
     }),
-  sender: senderType().notNull(),
+  sender: sender().notNull(),
   staffId: text("staff_id").references(() => staff.id, {
     onDelete: "restrict",
   }),
