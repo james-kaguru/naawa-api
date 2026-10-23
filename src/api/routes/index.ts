@@ -18,7 +18,7 @@ router.use("/children-centres/:childrenCentreId/enrollments", enrollmentRouter);
 router.use("/children-centres/:childrenCentreId/staff", staffRouter);
 router.use("/children-centres/:childrenCentreId/attendances", attendanceRouter);
 router.use("/children-centres/:childrenCentreId/activities", activityRouter);
-router.use("/threads", threadRouter);
+router.use("/children-centres/:childrenCentreId/threads", threadRouter);
 router.use("/members", memberRouter);
 
 export default router;
