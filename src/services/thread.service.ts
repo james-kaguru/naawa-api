@@ -13,8 +13,8 @@ const userOne = alias(user, "user_one");
 const userTwo = alias(user, "user_two");
 
 export interface CreateThread {
-  memberIdOne: string;
-  memberIdTwo: string;
+  childrenCentreId: string;
+  parentId: string;
 }
 
 export type FindThreads = PaginationQuery & {
@@ -53,49 +53,32 @@ export class ThreadService {
     );
   }
 
-  private orderMembers({
-    memberIdOne,
-    memberIdTwo,
-  }: CreateThread): CreateThread {
-    return memberIdOne < memberIdTwo
-      ? { memberIdOne, memberIdTwo }
-      : { memberIdOne: memberIdTwo, memberIdTwo: memberIdOne };
-  }
-
-  async findOrCreate(members: CreateThread): Promise<Thread> {
-    if (members.memberIdOne === members.memberIdTwo)
-      throw new BadRequestError(`A thread needs two different members`);
-
-    const { memberIdOne, memberIdTwo } = this.orderMembers(members);
-
+  async findOrCreate({
+    childrenCentreId,
+    parentId,
+  }: CreateThread): Promise<Thread> {
     const [existing] = await this.db
       .select({ id: this.thread.id })
       .from(this.thread)
       .where(
-        or(
-          and(
-            eq(this.thread.memberIdOne, memberIdOne),
-            eq(this.thread.memberIdTwo, memberIdTwo),
-          ),
-          and(
-            eq(this.thread.memberIdOne, memberIdTwo),
-            eq(this.thread.memberIdTwo, memberIdOne),
-          ),
+        and(
+          eq(this.thread.childrenCentreId, childrenCentreId),
+          eq(this.thread.parentId, parentId),
         ),
       )
       .limit(1);
 
-    if (existing) return this.findOne(existing.id, memberIdOne);
+    if (existing) return this.findOne(existing.id);
 
     const [res] = await this.db
       .insert(this.thread)
       .values({
-        memberIdOne,
-        memberIdTwo,
+        childrenCentreId,
+        parentId,
       })
       .returning({ id: this.thread.id });
 
-    return this.findOne(res!.id, memberIdOne);
+    return this.findOne(res!.id);
   }
 
   async find({

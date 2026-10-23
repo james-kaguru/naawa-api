@@ -1,6 +1,6 @@
 import { and, count, desc, eq, isNull, ne } from "drizzle-orm";
 import { db, type Db } from "@/db";
-import { message, type MessageTable } from "@/db/schema";
+import { message, type MessageTable, type Sender } from "@/db/schema";
 import { member, user } from "@/db/schema/auth.schema";
 import { NotFoundError } from "@/common/errors";
 import type { Message, PaginationServiceResponse } from "@/common/types";
@@ -8,7 +8,9 @@ import type { PaginationQuery } from "@/api/schemas";
 
 export interface CreateMessage {
   threadId: string;
-  senderId: string;
+  sender: Sender;
+  staffId: string | null;
+  parentId: string;
   body: string;
 }
 

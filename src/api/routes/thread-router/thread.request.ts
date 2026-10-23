@@ -1,14 +1,17 @@
 import { paginationQuerySchema } from "@/api/schemas";
+import { sender } from "@/db/schema";
 import { z } from "zod";
 
 export const threadParamsSchema = z.object({
   threadId: z.uuid(),
+  childrenCentreId: z.uuid(),
 });
 
 export type ThreadParamsSchema = z.infer<typeof threadParamsSchema>;
 
 export const createThreadSchema = z.object({
-  memberId: z.string().trim().min(1),
+  sender: z.enum(sender.enumValues),
+  parentId: z.string().trim().min(1),
   body: z.string().trim().min(1),
 });
 
