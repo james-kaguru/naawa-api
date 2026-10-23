@@ -162,12 +162,12 @@ export type ActivityTable = typeof activity;
 
 export const thread = pgTable("threads", {
   id: uuid().primaryKey().defaultRandom(),
-  childrenCentreId: text("children_centre_id")
+  childrenCentreId: uuid("children_centre_id")
     .notNull()
     .references(() => childrenCentre.id, {
       onDelete: "restrict",
     }),
-  parentId: text("parent_id")
+  parentId: uuid("parent_id")
     .notNull()
     .references(() => parent.id, {
       onDelete: "restrict",
@@ -188,7 +188,7 @@ export const message = pgTable("messages", {
       onDelete: "restrict",
     }),
   senderType: senderType().notNull(),
-  staffId: text("staff_id").references(() => staff.id, {
+  staffId: uuid("staff_id").references(() => staff.id, {
     onDelete: "restrict",
   }), // used as sender staff id / recipient staff id
   body: text().notNull(),
