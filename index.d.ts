@@ -13,6 +13,7 @@ declare global {
       session?: Session;
       memberId?: string;
       parentId?: string;
+      staffId?: string;
     }
   }
 }
