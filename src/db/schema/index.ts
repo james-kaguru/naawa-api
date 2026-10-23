@@ -169,13 +169,16 @@ export const thread = pgTable("threads", {
     }),
   parentId: text("parent_id")
     .notNull()
-    .references(() => member.id, {
+    .references(() => parent.id, {
       onDelete: "restrict",
     }),
   createdAt: timestamp().defaultNow().notNull(),
 });
 
 export type ThreadTable = typeof thread;
+
+export const senderType = pgEnum("sender_type", ["parent", "staff"]);
+export type SenderType = (typeof senderType.enumValues)[number];
 
 export const message = pgTable("messages", {
   id: uuid().primaryKey().defaultRandom(),
@@ -184,14 +187,15 @@ export const message = pgTable("messages", {
     .references(() => thread.id, {
       onDelete: "restrict",
     }),
-  senderId: text("sender_id")
-    .notNull()
-    .references(() => member.id, {
-      onDelete: "restrict",
-    }),
-  readById: text("read_by_id").references(() => member.id, {
+  sender: senderType().notNull(),
+  staffId: text("staff_id").references(() => staff.id, {
     onDelete: "restrict",
   }),
+  parentId: text("parent_id")
+    .notNull()
+    .references(() => parent.id, {
+      onDelete: "restrict",
+    }),
   body: text().notNull(),
   readAt: timestamp(),
   createdAt: timestamp().defaultNow().notNull(),
@@ -229,6 +233,14 @@ export const dbRelations = defineRelationsPart(
       children: r.many.child({
         from: r.parent.id.through(r.childParent.parentId),
         to: r.child.id.through(r.childParent.childId),
+      }),
+      threads: r.many.thread({
+        from: r.parent.id,
+        to: r.thread.parentId,
+      }),
+      messages: r.many.message({
+        from: r.parent.id,
+        to: r.message.parentId,
       }),
     },
     child: {
@@ -317,6 +329,10 @@ export const dbRelations = defineRelationsPart(
         from: r.staff.id,
         to: r.activity.staffId,
       }),
+      messages: r.many.message({
+        from: r.staff.id,
+        to: r.message.staffId,
+      }),
     },
     attendance: {
       enrollment: r.one.enrollment({
@@ -358,9 +374,9 @@ export const dbRelations = defineRelationsPart(
         to: r.childrenCentre.id,
         optional: false,
       }),
-      parent: r.one.member({
+      parent: r.one.parent({
         from: r.thread.parentId,
-        to: r.member.id,
+        to: r.parent.id,
         optional: false,
       }),
       messages: r.many.message({
@@ -369,20 +385,18 @@ export const dbRelations = defineRelationsPart(
       }),
     },
     message: {
-      sender: r.one.member({
-        from: r.message.senderId,
-        to: r.member.id,
-        optional: false,
-        alias: "message_sender",
-      }),
-      readBy: r.one.member({
-        from: r.message.readById,
-        to: r.member.id,
-        alias: "message_read_by",
-      }),
       thread: r.one.thread({
         from: r.message.threadId,
         to: r.thread.id,
+        optional: false,
+      }),
+      staff: r.one.staff({
+        from: r.message.staffId,
+        to: r.staff.id,
+      }),
+      parent: r.one.parent({
+        from: r.message.parentId,
+        to: r.parent.id,
         optional: false,
       }),
     },
@@ -402,20 +416,6 @@ export const dbRelations = defineRelationsPart(
       staff: r.one.staff({
         from: r.member.id,
         to: r.staff.memberId,
-      }),
-      sentMessages: r.many.message({
-        from: r.member.id,
-        to: r.message.senderId,
-        alias: "message_sender",
-      }),
-      readMessages: r.many.message({
-        from: r.member.id,
-        to: r.message.readById,
-        alias: "message_read_by",
-      }),
-      threads: r.many.thread({
-        from: r.member.id,
-        to: r.thread.parentId,
       }),
     },
   }),
