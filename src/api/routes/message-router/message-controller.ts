@@ -1,8 +1,8 @@
 import type {
   CreateMessageSchema,
   FindMessagesSchema,
-  ThreadParamsSchema,
-} from "../thread.request.ts";
+  MessageParamsSchema,
+} from "./message.request.ts";
 import { bindAll } from "@/common/utils";
 import type { Req, Res } from "@/common/types";
 import {
@@ -22,7 +22,7 @@ class MessageController {
   }
 
   async find(
-    req: Req<{ params: ThreadParamsSchema; query: FindMessagesSchema }>,
+    req: Req<{ params: MessageParamsSchema; query: FindMessagesSchema }>,
   ) {
     const { threadId } = req.params;
 
@@ -32,7 +32,7 @@ class MessageController {
   }
 
   async createMyThreadMessage(
-    req: Req<{ params: ThreadParamsSchema; body: CreateMessageSchema }>,
+    req: Req<{ params: MessageParamsSchema; body: CreateMessageSchema }>,
     res: Res,
   ) {
     const { threadId } = req.params;
@@ -48,7 +48,7 @@ class MessageController {
   }
 
   async findMyThreadMessages(
-    req: Req<{ params: ThreadParamsSchema; query: FindMessagesSchema }>,
+    req: Req<{ params: MessageParamsSchema; query: FindMessagesSchema }>,
     res: Res,
   ) {
     const { threadId } = req.params;
@@ -59,7 +59,7 @@ class MessageController {
   }
 
   async markMyThreadMessagesAsRead(
-    req: Req<{ params: ThreadParamsSchema }>,
+    req: Req<{ params: MessageParamsSchema }>,
     res: Res,
   ) {
     const { threadId } = req.params;

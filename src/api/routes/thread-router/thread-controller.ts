@@ -4,7 +4,7 @@ import type {
   FindParentsThreadsSchema,
   FindThreadsSchema,
   ThreadParamsSchema,
-} from "../thread.request.ts";
+} from "./thread.request.ts";
 import { bindAll } from "@/common/utils";
 import type { Req, Res } from "@/common/types";
 import {

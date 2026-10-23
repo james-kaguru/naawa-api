@@ -33,13 +33,3 @@ export type FindThreadsSchema = z.infer<typeof findThreadsSchema>;
 export const findParentsThreadsSchema = paginationQuerySchema;
 
 export type FindParentsThreadsSchema = z.infer<typeof findParentsThreadsSchema>;
-
-export const createMessageSchema = z.object({
-  body: z.string().trim().min(1),
-});
-
-export type CreateMessageSchema = z.infer<typeof createMessageSchema>;
-
-export const findMessagesSchema = paginationQuerySchema;
-
-export type FindMessagesSchema = z.infer<typeof findMessagesSchema>;
