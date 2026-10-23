@@ -1,18 +1,31 @@
 import { and, count, desc, eq, isNull, ne } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 import { db, type Db } from "@/db";
-import { message, staff, type MessageTable, type Sender } from "@/db/schema";
+import {
+  message,
+  parent,
+  staff,
+  thread,
+  type MessageTable,
+  type SenderType,
+} from "@/db/schema";
 import { member, user } from "@/db/schema/auth.schema";
 import { NotFoundError } from "@/common/errors";
-import type { Message, PaginationServiceResponse } from "@/common/types";
+import type {
+  Message,
+  MessageParticipant,
+  PaginationServiceResponse,
+} from "@/common/types";
 import type { PaginationQuery } from "@/api/schemas";
 
+const parentMember = alias(member, "parent_member");
+const parentUser = alias(user, "parent_user");
 const staffMember = alias(member, "staff_member");
 const staffUser = alias(user, "staff_user");
 
 export interface CreateMessage {
   threadId: string;
-  sender: Sender;
+  sender: SenderType;
   staffId: string | null;
   body: string;
 }
@@ -21,8 +34,14 @@ export type FindMessages = PaginationQuery & {
   threadId: string;
 };
 
-type MessageRow = Omit<Message, "staff"> & {
+type MessageRow = {
+  id: string;
+  senderType: SenderType;
+  parent: MessageParticipant;
   staff: { id: string | null; name: string | null };
+  body: string;
+  readAt: Date | null;
+  createdAt: Date;
 };
 
 export class MessageService {
@@ -34,8 +53,8 @@ export class MessageService {
   private get columns() {
     return {
       id: this.message.id,
-      threadId: this.message.threadId,
-      sender: this.message.sender,
+      senderType: this.message.senderType,
+      parent: { id: parent.id, name: parentUser.name },
       staff: { id: staff.id, name: staffUser.name },
       body: this.message.body,
       readAt: this.message.readAt,
@@ -47,15 +66,30 @@ export class MessageService {
     return this.db
       .select(this.columns)
       .from(this.message)
+      .innerJoin(thread, eq(thread.id, this.message.threadId))
+      .innerJoin(parent, eq(parent.id, thread.parentId))
+      .innerJoin(parentMember, eq(parentMember.id, parent.memberId))
+      .innerJoin(parentUser, eq(parentUser.id, parentMember.userId))
       .leftJoin(staff, eq(staff.id, this.message.staffId))
       .leftJoin(staffMember, eq(staffMember.id, staff.memberId))
       .leftJoin(staffUser, eq(staffUser.id, staffMember.userId));
   }
 
-  private toMessage({ staff, ...rest }: MessageRow): Message {
+  private toMessage(row: MessageRow): Message {
+    const staffParticipant: MessageParticipant | null = row.staff.id
+      ? { id: row.staff.id, name: row.staff.name ?? "" }
+      : null;
+
+    const staffSent = row.senderType === "staff";
+
     return {
-      ...rest,
-      staff: staff.id ? { id: staff.id, name: staff.name ?? "" } : null,
+      id: row.id,
+      sender: staffSent ? staffParticipant! : row.parent,
+      recipient: staffSent ? row.parent : staffParticipant,
+      body: row.body,
+      isRead: row.readAt !== null,
+      readAt: row.readAt,
+      createdAt: row.createdAt,
     };
   }
 
@@ -69,7 +103,7 @@ export class MessageService {
       .insert(this.message)
       .values({
         threadId,
-        sender,
+        senderType: sender,
         staffId,
         body,
       })
@@ -135,15 +169,19 @@ export class MessageService {
   async markAsRead(
     threadId: string,
     staffId: string | null,
-    reader: Sender,
+    reader: SenderType,
   ): Promise<number> {
     const res = await this.db
       .update(this.message)
-      .set({ readAt: new Date(), staffId })
+      .set(
+        reader === "staff"
+          ? { readAt: new Date(), staffId }
+          : { readAt: new Date() },
+      )
       .where(
         and(
           eq(this.message.threadId, threadId),
-          ne(this.message.sender, reader),
+          ne(this.message.senderType, reader),
           isNull(this.message.readAt),
         ),
       )
@@ -152,12 +190,12 @@ export class MessageService {
     return res.length;
   }
 
-  async countUnread(threadId: string, reader: Sender): Promise<number> {
+  async countUnread(threadId: string, reader: SenderType): Promise<number> {
     return this.db.$count(
       this.message,
       and(
         eq(this.message.threadId, threadId),
-        ne(this.message.sender, reader),
+        ne(this.message.senderType, reader),
         isNull(this.message.readAt),
       ),
     );

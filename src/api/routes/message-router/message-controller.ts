@@ -11,7 +11,7 @@ import {
   type MessageService,
   type ThreadService,
 } from "@/services";
-import type { Sender } from "@/db/schema";
+import type { SenderType } from "@/db/schema";
 
 class MessageController {
   constructor(

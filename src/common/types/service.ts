@@ -2,7 +2,7 @@ import type {
   ActivityType,
   AttendanceStatus,
   EnrollmentStatus,
-  Sender,
+  SenderType,
 } from "@/db/schema";
 
 export interface Member {
@@ -68,7 +68,7 @@ export interface Attendance {
 
 export type ChildAttendance = Omit<Attendance, "child"> & {
   childrenCentre: ChildrenCentre;
-}
+};
 
 export interface Activity {
   id: string;
@@ -83,7 +83,7 @@ export interface Activity {
 
 export type ChildActivity = Activity & {
   childrenCentre: ChildrenCentre;
-}
+};
 
 export interface ThreadMember {
   id: string;
@@ -97,12 +97,17 @@ export interface Thread {
   createdAt: Date;
 }
 
+export interface MessageParticipant {
+  id: string;
+  name: string;
+}
+
 export interface Message {
   id: string;
-  threadId: string;
-  sender: Sender;
-  staff: ThreadMember | null;
+  sender: MessageParticipant;
+  recipient: MessageParticipant | null;
   body: string;
+  isRead: boolean;
   readAt: Date | null;
   createdAt: Date;
 }
