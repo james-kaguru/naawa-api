@@ -18,6 +18,7 @@ export const orgPermisstionStatement = {
   attendance: ["create", "list", "update", "list:own"],
   activity: ["create", "list", "update", "list:own"],
   incident: ["create", "list", "update", "list:own"],
+  thread: ["list", "create:own", "list:own", "update:own"],
   message: ["list", "create:own", "list:own", "update:own"],
 } as const;
 
@@ -43,6 +44,7 @@ export const owner = ac.newRole({
   attendance: ["create", "list", "update", "list:own"],
   activity: ["create", "list", "update", "list:own"],
   incident: ["create", "list", "update", "list:own"],
+  thread: ["list", "create:own", "list:own", "update:own"],
   message: ["list", "create:own", "list:own", "update:own"],
 });
 
