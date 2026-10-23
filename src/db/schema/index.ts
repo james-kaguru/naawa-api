@@ -162,12 +162,12 @@ export type ActivityTable = typeof activity;
 
 export const thread = pgTable("threads", {
   id: uuid().primaryKey().defaultRandom(),
-  memberIdOne: text("member_id_one")
+  childrenCentreId: text("children_centre_id")
     .notNull()
-    .references(() => member.id, {
+    .references(() => childrenCentre.id, {
       onDelete: "restrict",
     }),
-  memberIdTwo: text("member_id_two")
+  parentId: text("parent_id")
     .notNull()
     .references(() => member.id, {
       onDelete: "restrict",
@@ -179,16 +179,19 @@ export type ThreadTable = typeof thread;
 
 export const message = pgTable("messages", {
   id: uuid().primaryKey().defaultRandom(),
-  senderId: text("sender_id")
-    .notNull()
-    .references(() => member.id, {
-      onDelete: "restrict",
-    }),
   threadId: uuid("thread_id")
     .notNull()
     .references(() => thread.id, {
       onDelete: "restrict",
     }),
+  senderId: text("sender_id")
+    .notNull()
+    .references(() => member.id, {
+      onDelete: "restrict",
+    }),
+  readById: text("read_by_id").references(() => member.id, {
+    onDelete: "restrict",
+  }),
   body: text().notNull(),
   readAt: timestamp(),
   createdAt: timestamp().defaultNow().notNull(),
@@ -268,6 +271,10 @@ export const dbRelations = defineRelationsPart(
         from: r.childrenCentre.id,
         to: r.staff.childrenCentreId,
       }),
+      threads: r.many.thread({
+        from: r.childrenCentre.id,
+        to: r.thread.childrenCentreId,
+      }),
     },
     enrollment: {
       child: r.one.child({
@@ -346,17 +353,15 @@ export const dbRelations = defineRelationsPart(
       }),
     },
     thread: {
-      memberOne: r.one.member({
-        from: r.thread.memberIdOne,
-        to: r.member.id,
+      childrenCentre: r.one.childrenCentre({
+        from: r.thread.childrenCentreId,
+        to: r.childrenCentre.id,
         optional: false,
-        alias: "thread_member_one",
       }),
-      memberTwo: r.one.member({
-        from: r.thread.memberIdTwo,
+      parent: r.one.member({
+        from: r.thread.parentId,
         to: r.member.id,
         optional: false,
-        alias: "thread_member_two",
       }),
       messages: r.many.message({
         from: r.thread.id,
@@ -368,6 +373,12 @@ export const dbRelations = defineRelationsPart(
         from: r.message.senderId,
         to: r.member.id,
         optional: false,
+        alias: "message_sender",
+      }),
+      readBy: r.one.member({
+        from: r.message.readById,
+        to: r.member.id,
+        alias: "message_read_by",
       }),
       thread: r.one.thread({
         from: r.message.threadId,
@@ -392,19 +403,19 @@ export const dbRelations = defineRelationsPart(
         from: r.member.id,
         to: r.staff.memberId,
       }),
-      threadsAsMemberOne: r.many.thread({
-        from: r.member.id,
-        to: r.thread.memberIdOne,
-        alias: "thread_member_one",
-      }),
-      threadsAsMemberTwo: r.many.thread({
-        from: r.member.id,
-        to: r.thread.memberIdTwo,
-        alias: "thread_member_two",
-      }),
       sentMessages: r.many.message({
         from: r.member.id,
         to: r.message.senderId,
+        alias: "message_sender",
+      }),
+      readMessages: r.many.message({
+        from: r.member.id,
+        to: r.message.readById,
+        alias: "message_read_by",
+      }),
+      threads: r.many.thread({
+        from: r.member.id,
+        to: r.thread.parentId,
       }),
     },
   }),
