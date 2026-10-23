@@ -10,7 +10,7 @@ import {
   updateChildSchema,
 } from "./child.request";
 import { authorizationCheck } from "@/api/middlewares";
-import { SystemRole } from "@/auth/plugins/admin";
+import { UserRoles } from "@/auth/plugins/admin";
 
 const childRouter: Router = Router();
 

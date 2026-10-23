@@ -1,6 +1,10 @@
-import { defaultStatements, adminAc ,userAc} from "better-auth/plugins/admin/access";
+import {
+  defaultStatements,
+  adminAc,
+  userAc,
+} from "better-auth/plugins/admin/access";
 import { createAccessControl } from "better-auth/plugins/access";
-import { admin } from "better-auth/plugins"
+import { admin } from "better-auth/plugins";
 
 const statement = {
   ...defaultStatements,
@@ -9,32 +13,44 @@ const statement = {
 const systemAc = createAccessControl(statement);
 
 const userRole = systemAc.newRole({
-    ...userAc.statements,
+  ...userAc.statements,
+});
+
+const staff = systemAc.newRole({
+  ...userAc.statements,
+});
+
+const parent = systemAc.newRole({
+  ...userAc.statements,
 });
 
 const systemAdmin = systemAc.newRole({
-    ...adminAc.statements,
+  ...adminAc.statements,
 });
 
 const adminRole = systemAc.newRole({
-  user: [statement.user[10]]
+  user: [statement.user[10]],
 });
 
-export const SystemRole = {
-  User: 'user',
-  SystemAdmin: 'systemAdmin',
-  Admin: 'admin',
+export const UserRoles = {
+  user: "user",
+  systemAdmin: "systemAdmin",
+  admin: "admin",
+  parent: "parent",
+  staff: "staff",
 } as const;
 
-export type SystemRole = (typeof SystemRole)[keyof typeof SystemRole];
+export type UserRoles = (typeof UserRoles)[keyof typeof UserRoles];
 
-export const systemRoles = Object.values(SystemRole);
+export const userRoles = Object.values(UserRoles);
 
 export const adminPlugin = admin({
   ac: systemAc,
   roles: {
     user: userRole,
     systemAdmin: systemAdmin,
-    admin:adminRole
-  }
-})
+    admin: adminRole,
+    staff,
+    parent,
+  },
+});
