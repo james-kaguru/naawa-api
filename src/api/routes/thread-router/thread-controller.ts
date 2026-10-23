@@ -4,7 +4,7 @@ import type {
   FindParentsThreadsSchema,
   FindThreadsSchema,
   ThreadParamsSchema,
-} from "./thread.request.ts";
+} from "../thread.request.ts";
 import { bindAll } from "@/common/utils";
 import type { Req, Res } from "@/common/types";
 import {
@@ -49,21 +49,19 @@ class ThreadController {
     req: Req<{ body: CreateThreadSchema; params: ThreadParamsSchema }>,
     res: Res,
   ) {
-    const { parentId, body } = req.body;
+    const { body } = req.body;
     const { childrenCentreId } = req.params;
 
+    const parentId = currentParentId(res) ?? req.body;
     const thread = await this.threadService.findOrCreate({
       childrenCentreId,
       parentId,
     });
 
     if (req.body.sender === "parent") {
-      const parentId = currentParentId(res);
-
       await this.messageService.create({
         threadId: thread.id,
         sender: req.body.sender,
-        parentId,
         staffId: null,
         body,
       });
@@ -73,7 +71,6 @@ class ThreadController {
       await this.messageService.create({
         threadId: thread.id,
         sender: req.body.sender,
-        parentId,
         staffId,
         body,
       });

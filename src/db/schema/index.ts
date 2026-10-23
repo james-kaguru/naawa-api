@@ -190,12 +190,7 @@ export const message = pgTable("messages", {
   sender: sender().notNull(),
   staffId: text("staff_id").references(() => staff.id, {
     onDelete: "restrict",
-  }),
-  parentId: text("parent_id")
-    .notNull()
-    .references(() => parent.id, {
-      onDelete: "restrict",
-    }),
+  }), // used as sender staff id / recipient staff id
   body: text().notNull(),
   readAt: timestamp(),
   createdAt: timestamp().defaultNow().notNull(),
@@ -237,10 +232,6 @@ export const dbRelations = defineRelationsPart(
       threads: r.many.thread({
         from: r.parent.id,
         to: r.thread.parentId,
-      }),
-      messages: r.many.message({
-        from: r.parent.id,
-        to: r.message.parentId,
       }),
     },
     child: {
@@ -393,11 +384,6 @@ export const dbRelations = defineRelationsPart(
       staff: r.one.staff({
         from: r.message.staffId,
         to: r.staff.id,
-      }),
-      parent: r.one.parent({
-        from: r.message.parentId,
-        to: r.parent.id,
-        optional: false,
       }),
     },
     member: {
