@@ -7,3 +7,11 @@ export const paginationQuerySchema = z.object({
 });
 
 export type PaginationQuery = z.infer<typeof paginationQuerySchema>;
+
+export const currencySchema = z.string().trim().toUpperCase().length(3);
+
+export const validPeriod = {
+  check: (data: { periodStart?: string | undefined; periodEnd?: string | undefined }) =>
+    !data.periodStart || !data.periodEnd || data.periodEnd >= data.periodStart,
+  error: { message: "periodEnd cannot be before periodStart", path: ["periodEnd"] },
+};
