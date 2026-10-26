@@ -2,6 +2,7 @@ import type {
   ActivityType,
   AttendanceStatus,
   EnrollmentStatus,
+  InvoiceStatus,
   SenderType,
 } from "@/db/schema";
 
@@ -118,3 +119,40 @@ export interface ChildrenCentre {
   id: string;
   location: string;
 }
+
+export interface InvoiceParty {
+  id: string;
+  name: string;
+}
+
+export interface InvoiceItem {
+  id: string;
+  description: string;
+  quantity: number;
+  unitAmount: number;
+  amount: number;
+}
+
+export interface PlainInvoice {
+  id: string;
+  invoiceNumber: string;
+  status: InvoiceStatus;
+  currency: string;
+  subtotal: number;
+  tax: number;
+  total: number;
+  amountPaid: number;
+  notes: string;
+  dueDate: string;
+  issuedAt: Date | null;
+  paidAt: Date | null;
+  voidedAt: Date | null;
+  childrenCentre: InvoiceParty;
+  parent: InvoiceParty;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export type Invoice = PlainInvoice & {
+  items: InvoiceItem[];
+};
