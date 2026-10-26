@@ -254,10 +254,7 @@ export const invoice = pgTable(
       t.childrenCentreId,
       t.invoiceNumber,
     ),
-    uniqueIndex("invoices_child_period_unique")
-      .on(t.childrenCentreId, t.childId, t.periodStart)
-      .where(sql`${t.status} <> 'void'`),
-    index("invoices_child_id_idx").on(t.childId),
+    index("invoices_child_period_idx").on(t.childId, t.periodStart, t.periodEnd),
     index("invoices_parent_id_idx").on(t.parentId),
     check("invoices_period_valid", sql`${t.periodEnd} >= ${t.periodStart}`),
     check(
@@ -289,6 +286,78 @@ export const invoiceItem = pgTable(
 );
 
 export type InvoiceItemTable = typeof invoiceItem;
+
+export const billingRun = pgTable(
+  "billing_runs",
+  {
+    id: uuid().primaryKey().defaultRandom(),
+    childrenCentreId: uuid("children_centre_id")
+      .notNull()
+      .references(() => childrenCentre.id, { onDelete: "restrict" }),
+    createdByStaffId: uuid("created_by_staff_id")
+      .notNull()
+      .references(() => staff.id, { onDelete: "restrict" }),
+    periodStart: date("period_start").notNull(),
+    periodEnd: date("period_end").notNull(),
+    dueDate: date("due_date").notNull(),
+    currency: varchar({ length: 3 }).notNull(),
+    description: text().notNull(),
+    amount: integer().notNull(),
+    createdAt: timestamp().defaultNow().notNull(),
+  },
+  (t) => [
+    index("billing_runs_children_centre_period_idx").on(
+      t.childrenCentreId,
+      t.periodStart,
+      t.periodEnd,
+    ),
+    check("billing_runs_period_valid", sql`${t.periodEnd} >= ${t.periodStart}`),
+    check("billing_runs_amount_positive", sql`${t.amount} > 0`),
+  ],
+);
+
+export type BillingRunTable = typeof billingRun;
+
+export const billingRunItemOutcome = pgEnum("billing_run_item_outcome", [
+  "created",
+  "skipped",
+  "failed",
+]);
+
+export type BillingRunItemOutcome =
+  (typeof billingRunItemOutcome.enumValues)[number];
+
+export const billingRunItem = pgTable(
+  "billing_run_items",
+  {
+    id: uuid().primaryKey().defaultRandom(),
+    billingRunId: uuid("billing_run_id")
+      .notNull()
+      .references(() => billingRun.id, { onDelete: "restrict" }),
+    childId: uuid("child_id")
+      .notNull()
+      .references(() => child.id, { onDelete: "restrict" }),
+    invoiceId: uuid("invoice_id").references(() => invoice.id, {
+      onDelete: "restrict",
+    }),
+    outcome: billingRunItemOutcome().notNull(),
+    reason: text().notNull().default(""),
+    createdAt: timestamp().defaultNow().notNull(),
+  },
+  (t) => [
+    unique("billing_run_items_billing_run_id_child_id_unique").on(
+      t.billingRunId,
+      t.childId,
+    ),
+    index("billing_run_items_invoice_id_idx").on(t.invoiceId),
+    check(
+      "billing_run_items_invoice_matches_outcome",
+      sql`(${t.outcome} = 'failed') = (${t.invoiceId} IS NULL)`,
+    ),
+  ],
+);
+
+export type BillingRunItemTable = typeof billingRunItem;
 
 export const transactionType = pgEnum("transaction_type", [
   "payment",
@@ -362,6 +431,8 @@ export const dbRelations = defineRelationsPart(
     message,
     invoice,
     invoiceItem,
+    billingRun,
+    billingRunItem,
     transaction,
     member,
     organization,
@@ -408,6 +479,10 @@ export const dbRelations = defineRelationsPart(
         from: r.child.id,
         to: r.invoice.childId,
       }),
+      billingRunItems: r.many.billingRunItem({
+        from: r.child.id,
+        to: r.billingRunItem.childId,
+      }),
     },
     childParent: {
       child: r.one.child({
@@ -442,6 +517,10 @@ export const dbRelations = defineRelationsPart(
       invoices: r.many.invoice({
         from: r.childrenCentre.id,
         to: r.invoice.childrenCentreId,
+      }),
+      billingRuns: r.many.billingRun({
+        from: r.childrenCentre.id,
+        to: r.billingRun.childrenCentreId,
       }),
     },
     enrollment: {
@@ -488,6 +567,10 @@ export const dbRelations = defineRelationsPart(
       messages: r.many.message({
         from: r.staff.id,
         to: r.message.staffId,
+      }),
+      billingRuns: r.many.billingRun({
+        from: r.staff.id,
+        to: r.billingRun.createdByStaffId,
       }),
     },
     attendance: {
@@ -574,6 +657,42 @@ export const dbRelations = defineRelationsPart(
       transactions: r.many.transaction({
         from: r.invoice.id,
         to: r.transaction.invoiceId,
+      }),
+      billingRunItems: r.many.billingRunItem({
+        from: r.invoice.id,
+        to: r.billingRunItem.invoiceId,
+      }),
+    },
+    billingRun: {
+      childrenCentre: r.one.childrenCentre({
+        from: r.billingRun.childrenCentreId,
+        to: r.childrenCentre.id,
+        optional: false,
+      }),
+      createdBy: r.one.staff({
+        from: r.billingRun.createdByStaffId,
+        to: r.staff.id,
+        optional: false,
+      }),
+      items: r.many.billingRunItem({
+        from: r.billingRun.id,
+        to: r.billingRunItem.billingRunId,
+      }),
+    },
+    billingRunItem: {
+      billingRun: r.one.billingRun({
+        from: r.billingRunItem.billingRunId,
+        to: r.billingRun.id,
+        optional: false,
+      }),
+      child: r.one.child({
+        from: r.billingRunItem.childId,
+        to: r.child.id,
+        optional: false,
+      }),
+      invoice: r.one.invoice({
+        from: r.billingRunItem.invoiceId,
+        to: r.invoice.id,
       }),
     },
     invoiceItem: {
