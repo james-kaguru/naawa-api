@@ -37,6 +37,6 @@
     "drizzle-kit": "1.0.0-rc.4",
     "tsc-alias": "^1.9.5",
     "tsx": "^4.23.13",
-    "typescript": "^7.0.2"
+    "typescript": "^6.0.3"
   }
 }
