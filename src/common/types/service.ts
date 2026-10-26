@@ -94,6 +94,7 @@ export interface Thread {
   id: string;
   childrenCentre: ThreadMember;
   parent: ThreadMember;
+  unreadCount: number;
   createdAt: Date;
 }
 

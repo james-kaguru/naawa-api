@@ -35,7 +35,10 @@ class ThreadController {
       params: ChildrenCentreThreadParamsSchema;
     }>,
   ) {
-    return this.threadService.find(req.params.childrenCentreId, req.query);
+    return this.threadService.find(req.params.childrenCentreId, {
+      ...req.query,
+      reader: "staff",
+    });
   }
 
   async findOne(req: Req<{ params: ThreadParamsSchema }>) {
@@ -90,6 +93,7 @@ class ThreadController {
     return this.threadService.find(req.params.childrenCentreId, {
       ...req.query,
       parentId: currentParentId(res),
+      reader: "parent",
     });
   }
 }

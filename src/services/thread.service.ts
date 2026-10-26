@@ -1,6 +1,13 @@
-import { and, count, desc, eq, type SQL } from "drizzle-orm";
+import { and, count, desc, eq, sql, type SQL } from "drizzle-orm";
 import { db, type Db } from "@/db";
-import { childrenCentre, parent, thread, type ThreadTable } from "@/db/schema";
+import {
+  childrenCentre,
+  message,
+  parent,
+  thread,
+  type SenderType,
+  type ThreadTable,
+} from "@/db/schema";
 import { member, user } from "@/db/schema/auth.schema";
 import { NotFoundError } from "@/common/errors";
 import type { PaginationServiceResponse, Thread } from "@/common/types";
@@ -13,6 +20,7 @@ export interface CreateThread {
 
 export type FindThreads = PaginationQuery & {
   parentId?: string | undefined;
+  reader: SenderType;
 };
 
 export class ThreadService {
@@ -21,18 +29,25 @@ export class ThreadService {
     private thread: ThreadTable,
   ) {}
 
-  private get columns() {
+  private columns(reader: SenderType) {
     return {
       id: this.thread.id,
       childrenCentre: { id: childrenCentre.id, name: childrenCentre.name },
       parent: { id: parent.id, name: user.name },
+      unreadCount: sql<number>`(
+        select count(*)::int
+        from ${message}
+        where ${message.threadId} = ${this.thread.id}
+          and ${message.senderType} <> ${reader}
+          and ${message.readAt} is null
+      )`,
       createdAt: this.thread.createdAt,
     };
   }
 
-  private select() {
+  private select(reader: SenderType) {
     return this.db
-      .select(this.columns)
+      .select(this.columns(reader))
       .from(this.thread)
       .innerJoin(
         childrenCentre,
@@ -73,14 +88,14 @@ export class ThreadService {
 
   async find(
     childrenCentreId: string,
-    { page, perPage, paginate, parentId }: FindThreads,
+    { page, perPage, paginate, parentId, reader }: FindThreads,
   ): Promise<PaginationServiceResponse<Thread>> {
     const filters: SQL[] = [eq(this.thread.childrenCentreId, childrenCentreId)];
     if (parentId) filters.push(eq(this.thread.parentId, parentId));
 
     const where = and(...filters);
 
-    const query = this.select()
+    const query = this.select(reader)
       .where(where)
       .orderBy(desc(this.thread.createdAt), desc(this.thread.id));
 
@@ -120,8 +135,9 @@ export class ThreadService {
     id: string,
     childrenCentreId: string,
     parentId?: string,
+    reader: SenderType = "parent",
   ): Promise<Thread> {
-    const [res] = await this.select()
+    const [res] = await this.select(reader)
       .where(
         and(
           eq(this.thread.id, id),
