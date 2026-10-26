@@ -1,6 +1,7 @@
 import type {
   ActivityType,
   AttendanceStatus,
+  BillingRunItemOutcome,
   EnrollmentStatus,
   InvoiceStatus,
   SenderType,
@@ -147,11 +148,14 @@ export interface PlainInvoice {
   total: number;
   amountPaid: number;
   notes: string;
+  periodStart: string;
+  periodEnd: string;
   dueDate: string;
   issuedAt: Date | null;
   paidAt: Date | null;
   voidedAt: Date | null;
   childrenCentre: InvoiceParty;
+  child: InvoiceParty;
   parent: InvoiceParty;
   createdAt: Date;
   updatedAt: Date;
@@ -160,6 +164,15 @@ export interface PlainInvoice {
 export type Invoice = PlainInvoice & {
   items: InvoiceItem[];
 };
+
+export interface OverlappingInvoice {
+  id: string;
+  invoiceNumber: string;
+  status: InvoiceStatus;
+  periodStart: string;
+  periodEnd: string;
+  total: number;
+}
 
 export interface BillingRunSummary {
   created: number;

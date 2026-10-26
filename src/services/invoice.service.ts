@@ -1,6 +1,7 @@
-import { and, count, desc, eq, inArray, sql, type SQL } from "drizzle-orm";
+import { and, count, desc, eq, gte, inArray, lte, ne, sql, type SQL } from "drizzle-orm";
 import { db, type Db, type DbExecutor, type Tx } from "@/db";
 import {
+  child,
   childrenCentre,
   invoice,
   invoiceItem,
@@ -10,10 +11,11 @@ import {
   type InvoiceTable,
 } from "@/db/schema";
 import { member, user } from "@/db/schema/auth.schema";
-import { BadRequestError, NotFoundError } from "@/common/errors";
+import { BadRequestError, ConflictError, NotFoundError } from "@/common/errors";
 import type {
   Invoice,
   InvoiceItem,
+  OverlappingInvoice,
   PaginationServiceResponse,
   PlainInvoice,
 } from "@/common/types";
@@ -27,12 +29,45 @@ export interface CreateInvoiceItem {
 
 export interface CreateInvoice {
   childrenCentreId: string;
+  childId: string;
   parentId: string;
   currency: string;
+  periodStart: string;
+  periodEnd: string;
   dueDate: string;
   tax?: number | undefined;
   notes?: string | undefined;
   items: CreateInvoiceItem[];
+  confirmOverlap?: boolean | undefined;
+}
+
+export interface InvoicePeriod {
+  childrenCentreId: string;
+  childId: string;
+  periodStart: string;
+  periodEnd: string;
+}
+
+export interface CreatePeriodInvoices {
+  childrenCentreId: string;
+  periodStart: string;
+  periodEnd: string;
+  dueDate: string;
+  currency: string;
+  description: string;
+  amount: number;
+  invoices: { childId: string; parentId: string }[];
+}
+
+export interface PeriodInvoice {
+  childId: string;
+  invoiceId: string;
+  invoiceNumber: string;
+}
+
+export interface PeriodInvoices {
+  created: PeriodInvoice[];
+  skipped: PeriodInvoice[];
 }
 
 export type UpdateInvoice = {
@@ -50,6 +85,8 @@ export interface InvoiceScope {
 
 export type FindInvoices = PaginationQuery &
   InvoiceScope & {
+    childId?: string | undefined;
+    periodStart?: string | undefined;
     status?: InvoiceStatus | undefined;
   };
 
@@ -71,11 +108,14 @@ export class InvoiceService {
       total: this.invoice.total,
       amountPaid: this.invoice.amountPaid,
       notes: this.invoice.notes,
+      periodStart: this.invoice.periodStart,
+      periodEnd: this.invoice.periodEnd,
       dueDate: this.invoice.dueDate,
       issuedAt: this.invoice.issuedAt,
       paidAt: this.invoice.paidAt,
       voidedAt: this.invoice.voidedAt,
       childrenCentre: { id: childrenCentre.id, name: childrenCentre.name },
+      child: { id: child.id, name: child.name },
       parent: { id: parent.id, name: user.name },
       createdAt: this.invoice.createdAt,
       updatedAt: this.invoice.updatedAt,
@@ -100,21 +140,24 @@ export class InvoiceService {
         childrenCentre,
         eq(childrenCentre.id, this.invoice.childrenCentreId),
       )
+      .innerJoin(child, eq(child.id, this.invoice.childId))
       .innerJoin(parent, eq(parent.id, this.invoice.parentId))
       .innerJoin(member, eq(member.id, parent.memberId))
       .innerJoin(user, eq(user.id, member.userId));
   }
 
-  private filters({ childrenCentreId, parentId, status }: Omit<FindInvoices, keyof PaginationQuery>) {
+  private filters({ childrenCentreId, parentId, childId, periodStart, status }: Omit<FindInvoices, keyof PaginationQuery>) {
     const filters: SQL[] = [];
     if (childrenCentreId) filters.push(eq(this.invoice.childrenCentreId, childrenCentreId));
     if (parentId) filters.push(eq(this.invoice.parentId, parentId));
+    if (childId) filters.push(eq(this.invoice.childId, childId));
+    if (periodStart) filters.push(eq(this.invoice.periodStart, periodStart));
     if (status) filters.push(eq(this.invoice.status, status));
 
     return and(...filters);
   }
 
-  private async nextInvoiceNumber(tx: Tx, childrenCentreId: string): Promise<string> {
+  private async lockNumbering(tx: Tx, childrenCentreId: string): Promise<number> {
     await tx.execute(sql`select pg_advisory_xact_lock(hashtext(${childrenCentreId}))`);
 
     const [res] = await tx
@@ -124,7 +167,11 @@ export class InvoiceService {
       .from(this.invoice)
       .where(eq(this.invoice.childrenCentreId, childrenCentreId));
 
-    return `INV-${String((res?.last ?? 0) + 1).padStart(6, "0")}`;
+    return res?.last ?? 0;
+  }
+
+  private invoiceNumber(sequence: number): string {
+    return `INV-${String(sequence).padStart(6, "0")}`;
   }
 
   private async insertItems(tx: Tx, invoiceId: string, items: CreateInvoiceItem[]) {
@@ -178,25 +225,100 @@ export class InvoiceService {
     return current;
   }
 
+  private async findForPeriod(
+    executor: DbExecutor,
+    childrenCentreId: string,
+    periodStart: string,
+    periodEnd: string,
+    childIds: string[],
+  ): Promise<PeriodInvoice[]> {
+    if (!childIds.length) return [];
+
+    const res = await executor
+      .select({
+        childId: this.invoice.childId,
+        invoiceId: this.invoice.id,
+        invoiceNumber: this.invoice.invoiceNumber,
+      })
+      .from(this.invoice)
+      .where(
+        and(
+          eq(this.invoice.childrenCentreId, childrenCentreId),
+          eq(this.invoice.periodStart, periodStart),
+          eq(this.invoice.periodEnd, periodEnd),
+          inArray(this.invoice.childId, childIds),
+          ne(this.invoice.status, "void"),
+        ),
+      )
+      .orderBy(this.invoice.createdAt);
+
+    return [...new Map(res.map((row) => [row.childId, row])).values()];
+  }
+
+  async findOverlapping(
+    { childrenCentreId, childId, periodStart, periodEnd }: InvoicePeriod,
+    executor: DbExecutor = this.db,
+  ): Promise<OverlappingInvoice[]> {
+    return executor
+      .select({
+        id: this.invoice.id,
+        invoiceNumber: this.invoice.invoiceNumber,
+        status: this.invoice.status,
+        periodStart: this.invoice.periodStart,
+        periodEnd: this.invoice.periodEnd,
+        total: this.invoice.total,
+      })
+      .from(this.invoice)
+      .where(
+        and(
+          eq(this.invoice.childrenCentreId, childrenCentreId),
+          eq(this.invoice.childId, childId),
+          ne(this.invoice.status, "void"),
+          lte(this.invoice.periodStart, periodEnd),
+          gte(this.invoice.periodEnd, periodStart),
+        ),
+      )
+      .orderBy(this.invoice.periodStart, this.invoice.invoiceNumber);
+  }
+
   async create({
     childrenCentreId,
+    childId,
     parentId,
     currency,
+    periodStart,
+    periodEnd,
     dueDate,
     tax = 0,
     notes = "",
     items,
+    confirmOverlap = false,
   }: CreateInvoice): Promise<Invoice> {
+    if (periodEnd < periodStart) throw new BadRequestError("periodEnd cannot be before periodStart");
+
     const id = await this.db.transaction(async (tx) => {
-      const invoiceNumber = await this.nextInvoiceNumber(tx, childrenCentreId);
+      const last = await this.lockNumbering(tx, childrenCentreId);
+
+      if (!confirmOverlap) {
+        const overlappingInvoices = await this.findOverlapping({ childrenCentreId, childId, periodStart, periodEnd }, tx);
+
+        if (overlappingInvoices.length) {
+          throw new ConflictError(
+            `Child ${childId} already has ${overlappingInvoices.length} invoice(s) overlapping ${periodStart} to ${periodEnd}`,
+          );
+        }
+      }
 
       const [res] = await tx
         .insert(this.invoice)
         .values({
-          invoiceNumber,
+          invoiceNumber: this.invoiceNumber(last + 1),
           childrenCentreId,
+          childId,
           parentId,
           currency,
+          periodStart,
+          periodEnd,
           dueDate,
           notes,
           tax,
@@ -215,6 +337,67 @@ export class InvoiceService {
     });
 
     return this.findOne(id, { childrenCentreId });
+  }
+
+  async createForPeriod(
+    tx: Tx,
+    {
+      childrenCentreId,
+      periodStart,
+      periodEnd,
+      dueDate,
+      currency,
+      description,
+      amount,
+      invoices,
+    }: CreatePeriodInvoices,
+  ): Promise<PeriodInvoices> {
+    if (periodEnd < periodStart) throw new BadRequestError("periodEnd cannot be before periodStart");
+
+    const childIds = invoices.map(({ childId }) => childId);
+    if (new Set(childIds).size !== childIds.length) throw new BadRequestError("Each child can only be invoiced once per period");
+
+    const last = await this.lockNumbering(tx, childrenCentreId);
+
+    const skipped = await this.findForPeriod(tx, childrenCentreId, periodStart, periodEnd, childIds);
+    const skippedChildIds = new Set(skipped.map(({ childId }) => childId));
+    const pending = invoices.filter(({ childId }) => !skippedChildIds.has(childId));
+
+    if (!pending.length) return { created: [], skipped };
+
+    const created = await tx
+      .insert(this.invoice)
+      .values(
+        pending.map(({ childId, parentId }, index) => ({
+          invoiceNumber: this.invoiceNumber(last + index + 1),
+          childrenCentreId,
+          childId,
+          parentId,
+          currency,
+          periodStart,
+          periodEnd,
+          dueDate,
+          subtotal: amount,
+          total: amount,
+        })),
+      )
+      .returning({
+        childId: this.invoice.childId,
+        invoiceId: this.invoice.id,
+        invoiceNumber: this.invoice.invoiceNumber,
+      });
+
+    await tx.insert(this.invoiceItem).values(
+      created.map(({ invoiceId }) => ({
+        invoiceId,
+        description,
+        quantity: 1,
+        unitAmount: amount,
+        amount,
+      })),
+    );
+
+    return { created, skipped };
   }
 
   async find({
