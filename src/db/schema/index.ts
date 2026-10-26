@@ -1,4 +1,5 @@
 import {
+  boolean,
   check,
   date,
   index,
@@ -52,10 +53,14 @@ export const childParent = pgTable(
     parentId: uuid("parent_id")
       .notNull()
       .references(() => parent.id, { onDelete: "restrict" }),
+    isBillingContact: boolean("is_billing_contact").notNull().default(false),
     timestamp: timestamp().defaultNow().notNull(),
   },
   (t) => [
     unique("child_parents_child_id_parent_id_unique").on(t.childId, t.parentId),
+    uniqueIndex("child_parents_billing_contact_unique")
+      .on(t.childId)
+      .where(sql`${t.isBillingContact}`),
   ],
 );
 
@@ -219,6 +224,9 @@ export const invoice = pgTable(
     childrenCentreId: uuid("children_centre_id")
       .notNull()
       .references(() => childrenCentre.id, { onDelete: "restrict" }),
+    childId: uuid("child_id")
+      .notNull()
+      .references(() => child.id, { onDelete: "restrict" }),
     parentId: uuid("parent_id")
       .notNull()
       .references(() => parent.id, { onDelete: "restrict" }),
@@ -229,6 +237,8 @@ export const invoice = pgTable(
     total: integer().notNull().default(0),
     amountPaid: integer("amount_paid").notNull().default(0),
     notes: text().notNull().default(""),
+    periodStart: date("period_start").notNull(),
+    periodEnd: date("period_end").notNull(),
     dueDate: date("due_date").notNull(),
     issuedAt: timestamp("issued_at"),
     paidAt: timestamp("paid_at"),
@@ -244,7 +254,12 @@ export const invoice = pgTable(
       t.childrenCentreId,
       t.invoiceNumber,
     ),
+    uniqueIndex("invoices_child_period_unique")
+      .on(t.childrenCentreId, t.childId, t.periodStart)
+      .where(sql`${t.status} <> 'void'`),
+    index("invoices_child_id_idx").on(t.childId),
     index("invoices_parent_id_idx").on(t.parentId),
+    check("invoices_period_valid", sql`${t.periodEnd} >= ${t.periodStart}`),
     check(
       "invoices_amounts_non_negative",
       sql`${t.subtotal} >= 0 AND ${t.tax} >= 0 AND ${t.total} >= 0 AND ${t.amountPaid} >= 0`,
@@ -388,6 +403,10 @@ export const dbRelations = defineRelationsPart(
       enrollments: r.many.enrollment({
         from: r.child.id,
         to: r.enrollment.childId,
+      }),
+      invoices: r.many.invoice({
+        from: r.child.id,
+        to: r.invoice.childId,
       }),
     },
     childParent: {
@@ -536,6 +555,11 @@ export const dbRelations = defineRelationsPart(
       childrenCentre: r.one.childrenCentre({
         from: r.invoice.childrenCentreId,
         to: r.childrenCentre.id,
+        optional: false,
+      }),
+      child: r.one.child({
+        from: r.invoice.childId,
+        to: r.child.id,
         optional: false,
       }),
       parent: r.one.parent({
