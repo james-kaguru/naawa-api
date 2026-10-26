@@ -160,3 +160,39 @@ export interface PlainInvoice {
 export type Invoice = PlainInvoice & {
   items: InvoiceItem[];
 };
+
+export interface BillingRunSummary {
+  created: number;
+  skipped: number;
+  failed: number;
+}
+
+export interface PlainBillingRun {
+  id: string;
+  periodStart: string;
+  periodEnd: string;
+  dueDate: string;
+  currency: string;
+  description: string;
+  amount: number;
+  createdBy: Staff;
+  summary: BillingRunSummary;
+  createdAt: Date;
+}
+
+export interface BillingRunInvoice {
+  id: string;
+  invoiceNumber: string;
+}
+
+export interface BillingRunItem {
+  id: string;
+  child: InvoiceParty;
+  outcome: BillingRunItemOutcome;
+  invoice: BillingRunInvoice | null;
+  reason: string;
+}
+
+export type BillingRun = PlainBillingRun & {
+  items: BillingRunItem[];
+};
