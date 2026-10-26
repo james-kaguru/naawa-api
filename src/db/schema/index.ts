@@ -1,5 +1,7 @@
 import {
+  check,
   date,
+  index,
   integer,
   json,
   pgEnum,
@@ -7,11 +9,12 @@ import {
   text,
   timestamp,
   unique,
+  uniqueIndex,
   uuid,
   varchar,
 } from "drizzle-orm/pg-core";
 import { member, organization, user } from "./auth.schema";
-import { defineRelationsPart } from "drizzle-orm";
+import { defineRelationsPart, sql } from "drizzle-orm";
 
 export const parent = pgTable("parents", {
   id: uuid().primaryKey().defaultRandom(),
@@ -198,6 +201,138 @@ export const message = pgTable("messages", {
 
 export type MessageTable = typeof message;
 
+export const invoiceStatus = pgEnum("invoice_status", [
+  "draft",
+  "open",
+  "paid",
+  "void",
+  "uncollectible",
+]);
+
+export type InvoiceStatus = (typeof invoiceStatus.enumValues)[number];
+
+export const invoice = pgTable(
+  "invoices",
+  {
+    id: uuid().primaryKey().defaultRandom(),
+    invoiceNumber: text("invoice_number").notNull(),
+    childrenCentreId: uuid("children_centre_id")
+      .notNull()
+      .references(() => childrenCentre.id, { onDelete: "restrict" }),
+    parentId: uuid("parent_id")
+      .notNull()
+      .references(() => parent.id, { onDelete: "restrict" }),
+    status: invoiceStatus().notNull().default("draft"),
+    currency: varchar({ length: 3 }).notNull(),
+    subtotal: integer().notNull().default(0),
+    tax: integer().notNull().default(0),
+    total: integer().notNull().default(0),
+    amountPaid: integer("amount_paid").notNull().default(0),
+    notes: text().notNull().default(""),
+    dueDate: date("due_date").notNull(),
+    issuedAt: timestamp("issued_at"),
+    paidAt: timestamp("paid_at"),
+    voidedAt: timestamp("voided_at"),
+    createdAt: timestamp().defaultNow().notNull(),
+    updatedAt: timestamp()
+      .defaultNow()
+      .$onUpdate(() => new Date())
+      .notNull(),
+  },
+  (t) => [
+    unique("invoices_children_centre_id_invoice_number_unique").on(
+      t.childrenCentreId,
+      t.invoiceNumber,
+    ),
+    index("invoices_parent_id_idx").on(t.parentId),
+    check(
+      "invoices_amounts_non_negative",
+      sql`${t.subtotal} >= 0 AND ${t.tax} >= 0 AND ${t.total} >= 0 AND ${t.amountPaid} >= 0`,
+    ),
+  ],
+);
+
+export type InvoiceTable = typeof invoice;
+
+export const invoiceItem = pgTable(
+  "invoice_items",
+  {
+    id: uuid().primaryKey().defaultRandom(),
+    invoiceId: uuid("invoice_id")
+      .notNull()
+      .references(() => invoice.id, { onDelete: "restrict" }),
+    description: text().notNull(),
+    quantity: integer().notNull().default(1),
+    unitAmount: integer("unit_amount").notNull(),
+    amount: integer().notNull(),
+    createdAt: timestamp().defaultNow().notNull(),
+  },
+  (t) => [
+    index("invoice_items_invoice_id_idx").on(t.invoiceId),
+    check("invoice_items_quantity_positive", sql`${t.quantity} > 0`),
+  ],
+);
+
+export type InvoiceItemTable = typeof invoiceItem;
+
+export const transactionType = pgEnum("transaction_type", [
+  "payment",
+  "refund",
+]);
+
+export type TransactionType = (typeof transactionType.enumValues)[number];
+
+export const transactionStatus = pgEnum("transaction_status", [
+  "pending",
+  "succeeded",
+  "failed",
+]);
+
+export type TransactionStatus = (typeof transactionStatus.enumValues)[number];
+
+export const paymentMethod = pgEnum("payment_method", [
+  "mpesa",
+  "card",
+  "bankTransfer",
+  "cash",
+]);
+
+export type PaymentMethod = (typeof paymentMethod.enumValues)[number];
+
+export const transaction = pgTable(
+  "transactions",
+  {
+    id: uuid().primaryKey().defaultRandom(),
+    invoiceId: uuid("invoice_id")
+      .notNull()
+      .references(() => invoice.id, { onDelete: "restrict" }),
+    type: transactionType().notNull(),
+    status: transactionStatus().notNull().default("pending"),
+    method: paymentMethod().notNull(),
+    amount: integer().notNull(),
+    currency: varchar({ length: 3 }).notNull(),
+    provider: text().notNull().default(""),
+    providerReference: text("provider_reference").notNull().default(""),
+    failureReason: text("failure_reason").notNull().default(""),
+    metadata: json().$type<Record<string, unknown>>().notNull().default({}),
+    processedAt: timestamp("processed_at"),
+    createdAt: timestamp().defaultNow().notNull(),
+    updatedAt: timestamp()
+      .defaultNow()
+      .$onUpdate(() => new Date())
+      .notNull(),
+  },
+  (t) => [
+    index("transactions_invoice_id_idx").on(t.invoiceId),
+    uniqueIndex("transactions_provider_reference_unique")
+      .on(t.provider, t.providerReference)
+      .where(sql`${t.providerReference} <> ''`),
+    check("transactions_amount_positive", sql`${t.amount} > 0`),
+  ],
+);
+
+export type TransactionTable = typeof transaction;
+
 export const dbRelations = defineRelationsPart(
   {
     parent,
@@ -210,6 +345,9 @@ export const dbRelations = defineRelationsPart(
     activity,
     thread,
     message,
+    invoice,
+    invoiceItem,
+    transaction,
     member,
     organization,
     user,
@@ -232,6 +370,10 @@ export const dbRelations = defineRelationsPart(
       threads: r.many.thread({
         from: r.parent.id,
         to: r.thread.parentId,
+      }),
+      invoices: r.many.invoice({
+        from: r.parent.id,
+        to: r.invoice.parentId,
       }),
     },
     child: {
@@ -277,6 +419,10 @@ export const dbRelations = defineRelationsPart(
       threads: r.many.thread({
         from: r.childrenCentre.id,
         to: r.thread.childrenCentreId,
+      }),
+      invoices: r.many.invoice({
+        from: r.childrenCentre.id,
+        to: r.invoice.childrenCentreId,
       }),
     },
     enrollment: {
@@ -384,6 +530,40 @@ export const dbRelations = defineRelationsPart(
       staff: r.one.staff({
         from: r.message.staffId,
         to: r.staff.id,
+      }),
+    },
+    invoice: {
+      childrenCentre: r.one.childrenCentre({
+        from: r.invoice.childrenCentreId,
+        to: r.childrenCentre.id,
+        optional: false,
+      }),
+      parent: r.one.parent({
+        from: r.invoice.parentId,
+        to: r.parent.id,
+        optional: false,
+      }),
+      items: r.many.invoiceItem({
+        from: r.invoice.id,
+        to: r.invoiceItem.invoiceId,
+      }),
+      transactions: r.many.transaction({
+        from: r.invoice.id,
+        to: r.transaction.invoiceId,
+      }),
+    },
+    invoiceItem: {
+      invoice: r.one.invoice({
+        from: r.invoiceItem.invoiceId,
+        to: r.invoice.id,
+        optional: false,
+      }),
+    },
+    transaction: {
+      invoice: r.one.invoice({
+        from: r.transaction.invoiceId,
+        to: r.invoice.id,
+        optional: false,
       }),
     },
     member: {
