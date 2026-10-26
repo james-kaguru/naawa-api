@@ -1,4 +1,4 @@
-import { and, eq, ne, sql, type SQL } from "drizzle-orm"
+import { and, eq, lte, ne, sql, type SQL } from "drizzle-orm"
 import { db, type Db } from "@/db"
 import { enrollment, type EnrollmentTable } from "@/db/schema"
 import { NotFoundError, BadRequestError } from "@/common/errors"
@@ -110,10 +110,14 @@ export class EnrollmentService {
     })
   }
 
-  async findActiveChildIds(childrenCentreId: string): Promise<string[]> {
+  async findActiveChildIds(childrenCentreId: string, startedOnOrBefore?: string): Promise<string[]> {
     const res = await this.db.select({ childId: this.enrollment.childId })
       .from(this.enrollment)
-      .where(and(eq(this.enrollment.childrenCentreId, childrenCentreId), eq(this.enrollment.status, "active")))
+      .where(and(
+        eq(this.enrollment.childrenCentreId, childrenCentreId),
+        eq(this.enrollment.status, "active"),
+        startedOnOrBefore ? lte(this.enrollment.startDate, startedOnOrBefore) : undefined,
+      ))
 
     return res.map(({ childId }) => childId)
   }
