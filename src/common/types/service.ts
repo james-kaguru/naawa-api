@@ -32,8 +32,12 @@ export interface Child {
   allergies: string;
   specialInstructions: string;
   medicalNotes: string;
-  parents: Parent[];
+  parents: ChildParent[];
 }
+
+export type ChildParent = Parent & {
+  isBillingContact: boolean;
+};
 
 export type PlainChild = Omit<Child, "parents">;
 

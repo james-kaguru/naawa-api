@@ -1,4 +1,4 @@
-import type { AddChildParentSchema, ChildParamsSchema, CreateChildSchema, FindChildrenSchema, UpdateChildSchema } from "./child.request.ts";
+import type { AddChildParentSchema, ChildParamsSchema, CreateChildSchema, FindChildrenSchema, SetBillingContactSchema, UpdateChildSchema } from "./child.request.ts";
 import { bindAll } from "@/common/utils";
 import type { Req } from "@/common/types";
 import { childService, parentService, type ChildService, type ParentService } from "@/services";
@@ -33,6 +33,12 @@ class ChildController {
     ]);
 
     return this.childService.addParent(req.params.id, req.body.parentId);
+  }
+
+  async setBillingContact(req: Req<{ params: ChildParamsSchema, body: SetBillingContactSchema }>) {
+    await this.childService.findOne(req.params.id);
+
+    return this.childService.setBillingContact(req.params.id, req.body.parentId);
   }
 }
 

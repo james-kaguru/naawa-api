@@ -39,3 +39,9 @@ export const addChildParentSchema = z.object({
 });
 
 export type AddChildParentSchema = z.infer<typeof addChildParentSchema>;
+
+export const setBillingContactSchema = z.object({
+  parentId: z.uuid(),
+});
+
+export type SetBillingContactSchema = z.infer<typeof setBillingContactSchema>;

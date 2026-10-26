@@ -15,7 +15,7 @@ import {
   type ChildTable,
 } from "@/db/schema";
 import { NotFoundError } from "@/common/errors";
-import type { Child, PaginationServiceResponse } from "@/common/types";
+import type { Child, ChildParent, PaginationServiceResponse } from "@/common/types";
 import type { FindChildrenSchema } from "@/api/routes/child-router";
 import type { FindUnenrolledChildrenSchema } from "@/api/routes/enrollment-router";
 import type { FindNotCheckedInChildrenSchema } from "@/api/routes/attendance-router";
@@ -35,7 +35,12 @@ export type UpdateChild = {
   medicalNotes?: string | undefined;
 };
 
-export type FindUnenrolledChildren = FindUnenrolledChildrenSchema & {
+export interface BillingContact {
+  childId: string;
+  parentId: string;
+}
+
+export type FindUnenrolledChildren =FindUnenrolledChildrenSchema & {
   enrolledChildIds: string[];
 };
 
@@ -57,6 +62,16 @@ export class ChildService {
   private readonly columns = childColumns;
 
   private readonly with = childWith;
+
+  private toChild<TRow extends { childParents: { isBillingContact: boolean; parent: Omit<ChildParent, "isBillingContact"> }[] }>({
+    childParents,
+    ...row
+  }: TRow): Omit<TRow, "childParents"> & { parents: ChildParent[] } {
+    return {
+      ...row,
+      parents: childParents.map(({ isBillingContact, parent }) => ({ ...parent, isBillingContact })),
+    };
+  }
 
   private filters(
     table: ChildTable,
@@ -119,6 +134,7 @@ export class ChildService {
       await tx.insert(this.childParent).values({
         childId: res!.id,
         parentId,
+        isBillingContact: true,
       });
 
       return res!.id;
@@ -145,7 +161,7 @@ export class ChildService {
     } as const;
 
     if (!paginate) {
-      const data = await this.db.query.child.findMany(query);
+      const data = (await this.db.query.child.findMany(query)).map((row) => this.toChild(row));
 
       return {
         data,
@@ -168,7 +184,7 @@ export class ChildService {
     ]);
 
     return {
-      data,
+      data: data.map((row) => this.toChild(row)),
       meta: {
         page,
         perPage,
@@ -196,7 +212,7 @@ export class ChildService {
     } as const;
 
     if (!paginate) {
-      const data = await this.db.query.child.findMany(query);
+      const data = (await this.db.query.child.findMany(query)).map((row) => this.toChild(row));
 
       return {
         data,
@@ -222,7 +238,7 @@ export class ChildService {
     ]);
 
     return {
-      data,
+      data: data.map((row) => this.toChild(row)),
       meta: {
         page,
         perPage,
@@ -253,7 +269,7 @@ export class ChildService {
     } as const;
 
     if (!paginate) {
-      const data = await this.db.query.child.findMany(query);
+      const data = (await this.db.query.child.findMany(query)).map((row) => this.toChild(row));
 
       return {
         data,
@@ -276,7 +292,7 @@ export class ChildService {
     ]);
 
     return {
-      data,
+      data: data.map((row) => this.toChild(row)),
       meta: {
         page,
         perPage,
@@ -295,7 +311,7 @@ export class ChildService {
 
     if (!res) throw new NotFoundError(`Child ${id} not found`);
 
-    return res;
+    return this.toChild(res);
   }
 
   async findByParentId(id: string, parentId: string): Promise<Child> {
@@ -311,7 +327,7 @@ export class ChildService {
 
     if (!res) throw new NotFoundError(`Child ${id} not found`);
 
-    return res;
+    return this.toChild(res);
   }
 
   async update(
@@ -348,6 +364,40 @@ export class ChildService {
       .onConflictDoNothing();
 
     return this.findOne(childId);
+  }
+
+  async setBillingContact(childId: string, parentId: string): Promise<Child> {
+    await this.db.transaction(async (tx) => {
+      const links = await tx
+        .select({ id: this.childParent.id, parentId: this.childParent.parentId })
+        .from(this.childParent)
+        .where(eq(this.childParent.childId, childId))
+        .for("update");
+
+      const link = links.find((row) => row.parentId === parentId);
+      if (!link) throw new NotFoundError(`Parent ${parentId} is not linked to child ${childId}`);
+
+      await tx
+        .update(this.childParent)
+        .set({ isBillingContact: false })
+        .where(and(eq(this.childParent.childId, childId), eq(this.childParent.isBillingContact, true)));
+
+      await tx
+        .update(this.childParent)
+        .set({ isBillingContact: true })
+        .where(eq(this.childParent.id, link.id));
+    });
+
+    return this.findOne(childId);
+  }
+
+  async findBillingContacts(childIds: string[]): Promise<BillingContact[]> {
+    if (!childIds.length) return [];
+
+    return this.db
+      .select({ childId: this.childParent.childId, parentId: this.childParent.parentId })
+      .from(this.childParent)
+      .where(and(inArray(this.childParent.childId, childIds), eq(this.childParent.isBillingContact, true)));
   }
 }
 

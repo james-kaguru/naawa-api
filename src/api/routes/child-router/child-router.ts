@@ -7,6 +7,7 @@ import {
   childParamsSchema,
   createChildSchema,
   findChildrenSchema,
+  setBillingContactSchema,
   updateChildSchema,
 } from "./child.request";
 import { authorizationCheck } from "@/api/middlewares";
@@ -63,6 +64,16 @@ childRouter.post(
   }),
   validate({ params: childParamsSchema, body: addChildParentSchema }),
   handle(childController.addParent, 201),
+);
+childRouter.put(
+  "/:id/billing-contact",
+  authorizationCheck({
+    permissions: {
+      child: ["update"],
+    },
+  }),
+  validate({ params: childParamsSchema, body: setBillingContactSchema }),
+  handle(childController.setBillingContact),
 );
 
 export { childRouter };
