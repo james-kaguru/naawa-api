@@ -104,7 +104,7 @@ parentRouter.get(
 parentRouter.post(
   "/",
   authorizationCheck({
-    systemRoles: [UserRoles.admin, UserRoles.systemAdmin],
+    systemRoles: [UserRoles.admin, UserRoles.staff, UserRoles.systemAdmin],
     permissions: {
       parent: ["update"],
     },
@@ -115,7 +115,7 @@ parentRouter.post(
 parentRouter.put(
   "/:id",
   authorizationCheck({
-    systemRoles: [UserRoles.admin, UserRoles.systemAdmin],
+    systemRoles: [UserRoles.admin, UserRoles.staff, UserRoles.systemAdmin],
     permissions: {
       parent: ["create"],
     },
