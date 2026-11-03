@@ -33,6 +33,9 @@ const envSchema = z.object({
   BETTER_AUTH_URL: z
     .url({ protocol: /^https?$/, error: "must be an http:// or https:// URL" })
     .default("http://localhost:8000"),
+  BETTER_AUTH_SECRET: z
+    .string({ error: "is required, generate one with: openssl rand -base64 32" })
+    .min(32, { error: "must be at least 32 characters, generate one with: openssl rand -base64 32" }),
 });
 
 export type Env = z.infer<typeof envSchema>;

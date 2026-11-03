@@ -1,0 +1,22 @@
+options:
+  logging: CLOUD_LOGGING_ONLY
+steps:
+  - name: "gcr.io/cloud-builders/docker"
+    id: "Build dev images"
+    args:
+      [
+        "build",
+        "-t",
+        "europe-docker.pkg.dev/prod-project-418604/naawa/naawa-api:$TAG_NAME",
+        "-t",
+        "europe-docker.pkg.dev/prod-project-418604/naawa/naawa-api:latest",
+        ".",
+      ]
+  - name: "gcr.io/cloud-builders/docker"
+    id: "Push image to Artifact Registry"
+    args:
+      [
+        "push",
+        "--all-tags",
+        "europe-docker.pkg.dev/prod-project-418604/naawa/naawa-api",
+      ]
