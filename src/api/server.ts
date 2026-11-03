@@ -40,7 +40,7 @@ export default class ExpressServer {
   handleCors() {
     this.app.use(
       cors({
-        origin: "http://localhost:3001", // Replace with your frontend's origin
+        origin: getEnv().CORS_ORIGINS,
         methods: ["GET", "POST", "PUT", "DELETE"], // Specify allowed HTTP methods
         credentials: true, // Allow credentials (cookies, authorization headers, etc.)
       })

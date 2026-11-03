@@ -7,6 +7,19 @@ const envSchema = z.object({
     protocol: /^postgres(ql)?$/,
     error: "must be a postgres:// or postgresql:// connection string",
   }),
+  CORS_ORIGINS: z
+    .string()
+    .default("http://localhost:3000")
+    .transform((value) => value.split(",").map((origin) => origin.trim()).filter(Boolean))
+    .pipe(
+      z
+        .array(
+          z.url({ protocol: /^https?$/ }).refine((origin) => new URL(origin).origin === origin, {
+            error: "must be an origin only (scheme, host and optional port), with no path or trailing slash",
+          }),
+        )
+        .min(1, { error: "must list at least one origin" }),
+    ),
 })
 
 export type Env = z.infer<typeof envSchema>;
