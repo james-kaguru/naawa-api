@@ -21,7 +21,7 @@ const parent = systemAc.newRole({
 });
 
 const adminRole = systemAc.newRole({
-  user: [statement.user[10]],
+  ...adminAc.statements,
 });
 
 export const UserRoles = {
