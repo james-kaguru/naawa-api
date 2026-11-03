@@ -1,5 +1,5 @@
 import { and, eq } from "drizzle-orm";
-import { auth } from "@/auth";
+import { auth, orgPermisstionStatement, type OrgPermissions } from "@/auth";
 import { db } from "@/db";
 import {
   member,
@@ -11,10 +11,16 @@ import {
 // Dynamic roles stored per organization, on top of the static owner/admin/member roles
 const organizationRoles: {
   role: string;
-  permission: Record<string, string[]>;
+  permission: OrgPermissions;
 }[] = [
+  {
+    role: "owner",
+    permission: orgPermisstionStatement as any,
+  },
   { role: "parent", permission: {} },
-  { role: "receptionist", permission: {} },
+  { role: "staff", permission: {} },
+  { role: "supervisor", permission: {} },
+  { role: "finance", permission: {} },
 ];
 
 type Role = "owner" | "admin" | "member" | "parent" | "receptionist";
@@ -65,7 +71,7 @@ async function seedUsers() {
     if (platformAdmin) {
       await db
         .update(user)
-        .set({ role: "systemAdmin" })
+        .set({ role: "admin" })
         .where(eq(user.id, created.id));
     }
 
@@ -112,14 +118,24 @@ async function seedOrganizations(userIds: Map<string, string>) {
             ),
           );
 
-        if (role) continue;
+        const permission = JSON.stringify(r.permission);
+
+        if (role) {
+          await tx
+            .update(organizationRole)
+            .set({ permission, updatedAt: new Date() })
+            .where(eq(organizationRole.id, role.id));
+
+          console.log(`role updated: ${r.role} -> ${org.slug}`);
+          continue;
+        }
 
         // Better Auth stores permissions as a JSON string
         await tx.insert(organizationRole).values({
           id: crypto.randomUUID(),
           organizationId,
           role: r.role,
-          permission: JSON.stringify(r.permission),
+          permission,
         });
 
         console.log(`role: ${r.role} -> ${org.slug}`);
