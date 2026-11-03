@@ -58,7 +58,7 @@ class ParentController {
     const member = await auth.api.addMember({
       body: {
         userId: user.id,
-        role: ["parent"],
+        role: ["parent"] as any[],
         organizationId: ORGANIZATION_ID,
       },
     });
