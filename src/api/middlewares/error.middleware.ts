@@ -9,7 +9,7 @@ export default function errorMiddleware(
   res: Res,
   next: NextFunction,
 ) {
-  console.log(req.url, err);
+  console.log(req.url, JSON.stringify(res.locals), err);
 
   if (err instanceof ValidationError) {
     res.status(err.status).json({

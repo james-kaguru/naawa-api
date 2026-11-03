@@ -20,7 +20,6 @@ export type AuthFn = (req: Req, res: Res) => Promise<void>;
 export function authorizationCheck(props: AuthorizationCheck, authFn?: AuthFn) {
   return async (req: Req, res: Res, next: NextFunction) => {
     if (!res.locals.session) {
-      console.log(res.locals.session);
       throw new UnauthorizedError("Unauthorized");
     }
 
