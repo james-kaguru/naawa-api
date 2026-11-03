@@ -31,6 +31,7 @@ import { BadRequestError } from "@/common/errors";
 import type { UpdateChildSchema } from "../child-router/child.request.ts";
 import type { FindChildAttendancesSchema } from "../attendance-router/attendance.request.ts";
 import type { FindChildActivitiesSchema } from "../activity-router/activity.request.ts";
+import { UserRoles } from "@/auth";
 
 class ParentController {
   constructor(
@@ -51,7 +52,7 @@ class ParentController {
         email: body.email,
         password: body.password,
         name: body.name,
-        role: "user",
+        role: UserRoles.parent,
       },
     });
 
