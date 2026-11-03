@@ -32,10 +32,6 @@ export type OrgPermissions = {
 
 export const ac = createAccessControl(orgPermisstionStatement);
 
-export const member = ac.newRole({
-  ...memberAc.statements,
-});
-
 export const owner = ac.newRole({
   ...ownerAc.statements,
   parent: ["create", "list", "update"],
@@ -56,7 +52,6 @@ export const organizationPlugin = organization({
   ac,
   roles: {
     owner,
-    member,
   },
   dynamicAccessControl: {
     enabled: true,
