@@ -4,12 +4,11 @@ import { apiKey } from "@better-auth/api-key";
 import { drizzleAdapter } from "@better-auth/drizzle-adapter/relations-v2";
 import { betterAuth } from "better-auth";
 import { organizationPlugin, adminPlugin } from "./plugins";
+import { getEnv } from "@/common/env-validator";
 
 export const auth = betterAuth({
-  baseURL: "http://localhost:8001",
-  trustedOrigins: async () => {
-    return ["http://localhost:3001"];
-  },
+  baseURL: getEnv().BETTER_AUTH_URL,
+  trustedOrigins: getEnv().CORS_ORIGINS,
   database: drizzleAdapter(db, {
     provider: "pg",
     schema,

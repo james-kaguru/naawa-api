@@ -1,7 +1,9 @@
 import * as z from "zod";
 
 const envSchema = z.object({
-  NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
+  NODE_ENV: z
+    .enum(["development", "test", "production"])
+    .default("development"),
   PORT: z.coerce.number().int().min(1).max(65535).default(8000),
   DATABASE_URL: z.url({
     protocol: /^postgres(ql)?$/,
@@ -10,17 +12,28 @@ const envSchema = z.object({
   CORS_ORIGINS: z
     .string()
     .default("http://localhost:3000")
-    .transform((value) => value.split(",").map((origin) => origin.trim()).filter(Boolean))
+    .transform((value) =>
+      value
+        .split(",")
+        .map((origin) => origin.trim())
+        .filter(Boolean),
+    )
     .pipe(
       z
         .array(
-          z.url({ protocol: /^https?$/ }).refine((origin) => new URL(origin).origin === origin, {
-            error: "must be an origin only (scheme, host and optional port), with no path or trailing slash",
-          }),
+          z
+            .url({ protocol: /^https?$/ })
+            .refine((origin) => new URL(origin).origin === origin, {
+              error:
+                "must be an origin only (scheme, host and optional port), with no path or trailing slash",
+            }),
         )
         .min(1, { error: "must list at least one origin" }),
     ),
-})
+  BETTER_AUTH_URL: z
+    .url({ protocol: /^https?$/, error: "must be an http:// or https:// URL" })
+    .default("http://localhost:8000"),
+});
 
 export type Env = z.infer<typeof envSchema>;
 
@@ -35,7 +48,9 @@ export function validateEnv(): Env {
   const result = envSchema.safeParse(process.env);
 
   if (!result.success) {
-    throw new Error(`Invalid environment variables:\n${z.prettifyError(result.error)}`);
+    throw new Error(
+      `Invalid environment variables:\n${z.prettifyError(result.error)}`,
+    );
   }
 
   env = result.data;
@@ -43,11 +58,7 @@ export function validateEnv(): Env {
   return env;
 }
 
-/** The validated env. Throws if read before validateEnv() has run. */
+/** The validated env. Validates on first read if validateEnv() hasn't run yet. */
 export function getEnv(): Env {
-  if (!env) {
-    throw new Error("getEnv() called before validateEnv()");
-  }
-
-  return env;
+  return env ?? validateEnv();
 }
