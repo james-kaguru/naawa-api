@@ -40,8 +40,10 @@ export default class ExpressServer {
   handleCors() {
     this.app.use(
       cors({
-        origin: getEnv().CORS_ORIGINS,
-        methods: ["GET", "POST", "PUT", "DELETE"], // Specify allowed HTTP methods
+        // TODO(insecure): reflects ANY origin with credentials. Restore
+        // `origin: getEnv().CORS_ORIGINS` before going to production.
+        origin: true,
+        methods: ["GET", "POST", "PUT", "PATCH", "DELETE"], // Specify allowed HTTP methods
         credentials: true, // Allow credentials (cookies, authorization headers, etc.)
       })
     );

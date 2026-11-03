@@ -8,7 +8,9 @@ import { getEnv } from "@/common/env-validator";
 
 export const auth = betterAuth({
   baseURL: getEnv().BETTER_AUTH_URL,
-  trustedOrigins: getEnv().CORS_ORIGINS,
+  // TODO(insecure): trusts whatever origin the request came from (disables
+  // Better Auth's origin/CSRF check). Restore `getEnv().CORS_ORIGINS` before production.
+  trustedOrigins: (request) => [request?.headers.get("origin")],
   database: drizzleAdapter(db, {
     provider: "pg",
     schema,
