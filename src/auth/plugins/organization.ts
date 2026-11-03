@@ -32,27 +32,8 @@ export type OrgPermissions = {
 
 export const ac = createAccessControl(orgPermisstionStatement);
 
-export const owner = ac.newRole({
-  ...ownerAc.statements,
-  parent: ["create", "list", "update"],
-  child: ["create", "list", "update", "create:own", "list:own", "update:own"],
-  childrenCentre: ["create", "list", "update"],
-  enrollment: ["create", "list", "update", "list:own"],
-  staff: ["create", "list", "delete"],
-  attendance: ["create", "list", "update", "list:own"],
-  activity: ["create", "list", "update", "list:own"],
-  incident: ["create", "list", "update", "list:own"],
-  thread: ["create", "list", "update", "list:own"],
-  message: ["create:own", "list", "update:own"],
-  invoice: ["create", "list", "update", "delete", "list:own"],
-  billingRun: ["create", "list"],
-});
-
 export const organizationPlugin = organization({
   ac,
-  roles: {
-    owner,
-  },
   dynamicAccessControl: {
     enabled: true,
   },
