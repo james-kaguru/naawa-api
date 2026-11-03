@@ -31,6 +31,11 @@ export const auth = betterAuth({
       },
     }),
   ],
+  defaultCookieAttributes: {
+    sameSite: "none",
+    secure: true, // required with SameSite=None (Cloud Run is HTTPS, so fine)
+    partitioned: true, // CHIPS, helps with Chrome's third-party cookie restrictions
+  },
 });
 
 export type IAuth = typeof auth;
