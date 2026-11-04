@@ -11,6 +11,7 @@ import { messageRouter } from "./message-router";
 import { invoiceRouter } from "./invoice-router";
 import { billingRunRouter } from "./billing-run-router";
 import memberRouter from "./member.router.ts";
+import { meRouter } from "./me-router";
 
 const router: Router = Router();
 
@@ -29,5 +30,6 @@ router.use(
 router.use("/children-centres/:childrenCentreId/invoices", invoiceRouter);
 router.use("/children-centres/:childrenCentreId/billing-runs", billingRunRouter);
 router.use("/members", memberRouter);
+router.use("/me", meRouter);
 
 export default router;
