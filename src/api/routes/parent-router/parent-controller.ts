@@ -56,10 +56,18 @@ class ParentController {
       },
     });
 
+    await auth.api.getOrgRole({
+      query: {
+        roleName: "parent",
+        organizationId: ORGANIZATION_ID,
+      },
+      headers: fromNodeHeaders(req.headers),
+    });
+
     const member = await auth.api.addMember({
       body: {
         userId: user.id,
-        role: ["parent"] as any[],
+        role: "parent" as any,
         organizationId: ORGANIZATION_ID,
       },
     });

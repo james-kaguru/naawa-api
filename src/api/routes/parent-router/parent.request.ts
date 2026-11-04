@@ -2,10 +2,10 @@ import { paginationQuerySchema } from "@/api/schemas";
 import { z } from "zod";
 
 export const createParentSchema = z.object({
-  name: z.string().trim().min(2),
-  email: z.email().trim(),
-  phoneNumber: z.string().trim().startsWith("254").min(12).max(12),
+  name: z.string().trim().min(1),
+  email: z.email().trim().min(1),
   password: z.string().trim(),
+  phoneNumber: z.string().trim().startsWith("254").min(12).max(12),
 });
 
 export type CreateParentSchema = z.infer<typeof createParentSchema>;
