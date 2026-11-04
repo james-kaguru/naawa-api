@@ -52,7 +52,7 @@ class ParentController {
         email: body.email,
         password: body.password,
         name: body.name,
-        role: UserRoles.parent,
+        role: UserRoles.user,
       },
     });
 
