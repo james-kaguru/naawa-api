@@ -1,5 +1,5 @@
 import { authorizationCheck, validate } from "@/api/middlewares";
-import { UserRoles } from "@/auth/plugins/admin";
+import { Roles } from "@/auth/plugins/admin";
 import { handle } from "@/common/utils/index";
 import { Router } from "express";
 import { parentController } from "./parent-controller";
@@ -104,7 +104,7 @@ parentRouter.get(
 parentRouter.post(
   "/",
   authorizationCheck({
-    systemRoles: [UserRoles.admin, UserRoles.staff, UserRoles.systemAdmin],
+    roles: [Roles.admin, Roles.staff, Roles.systemAdmin],
     permissions: {
       parent: ["update"],
     },
@@ -115,7 +115,7 @@ parentRouter.post(
 parentRouter.put(
   "/:id",
   authorizationCheck({
-    systemRoles: [UserRoles.admin, UserRoles.staff, UserRoles.systemAdmin],
+    roles: [Roles.admin, Roles.staff, Roles.systemAdmin],
     permissions: {
       parent: ["create"],
     },

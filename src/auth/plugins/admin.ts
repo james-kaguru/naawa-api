@@ -20,14 +20,14 @@ const adminRole = systemAc.newRole({
   ...adminAc.statements,
 });
 
-export const UserRoles = {
+export const Roles = {
   admin: "admin",
   user: "user",
 } as const;
 
-export type UserRoles = (typeof UserRoles)[keyof typeof UserRoles];
+export type Roles = (typeof Roles)[keyof typeof Roles];
 
-export const userRoles = Object.values(UserRoles);
+export const roles = Object.values(Roles);
 
 export const adminPlugin = admin({
   ac: systemAc,
