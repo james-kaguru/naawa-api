@@ -1,5 +1,5 @@
 import { auth, type OrgPermissions } from "@/auth";
-import type { Roles } from "@/auth/plugins/admin";
+import type { Role } from "@/auth/plugins/admin";
 import {
   ForbiddenError,
   InternalServerError,
@@ -11,7 +11,7 @@ import type { NextFunction } from "express";
 import { currentUser } from "./locals";
 
 export interface AuthorizationCheck {
-  roles?: Roles[];
+  roles?: Role[];
   permissions: OrgPermissions;
 }
 
@@ -30,7 +30,7 @@ export function authorizationCheck(props: AuthorizationCheck, authFn?: AuthFn) {
       throw new InternalServerError(`Role not set for user ${user.id}`);
 
     if (props.roles) {
-      if (!props.roles.includes(userRole as Roles))
+      if (!props.roles.includes(userRole as Role))
         throw new ForbiddenError("Forbidden");
     }
 

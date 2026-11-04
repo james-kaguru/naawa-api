@@ -9,6 +9,7 @@ import {
   staffParamsSchema,
 } from "./staff.request";
 import { authorizationCheck } from "@/api/middlewares";
+import { Role } from "@/auth";
 
 const staffRouter: Router = Router({ mergeParams: true });
 
@@ -35,11 +36,15 @@ staffRouter.get(
 staffRouter.post(
   "/",
   authorizationCheck({
+    roles: [Role.user],
     permissions: {
       staff: ["create"],
     },
   }),
-  validate({ params: childrenCentreStaffParamsSchema, body: createStaffSchema }),
+  validate({
+    params: childrenCentreStaffParamsSchema,
+    body: createStaffSchema,
+  }),
   handle(staffController.create, 201),
 );
 staffRouter.delete(

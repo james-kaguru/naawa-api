@@ -11,7 +11,7 @@ import {
   updateChildSchema,
 } from "./child.request";
 import { authorizationCheck } from "@/api/middlewares";
-import { Roles } from "@/auth/plugins/admin";
+import { Role } from "@/auth/plugins/admin";
 
 const childRouter: Router = Router();
 
