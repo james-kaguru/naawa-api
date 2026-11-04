@@ -19,7 +19,7 @@ export const createStaffSchema = z.object({
   name: z.string().trim().min(1),
   email: z.email().trim().min(1),
   password: z.string().trim(),
-  organizationRoleId: z.string(),
+  roleName: z.string(),
 });
 
 export type CreateStaffSchema = z.infer<typeof createStaffSchema>;

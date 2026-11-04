@@ -36,7 +36,7 @@ staffRouter.get(
 staffRouter.post(
   "/",
   authorizationCheck({
-    roles: [Role.user],
+    roles: [Role.admin],
     permissions: {
       staff: ["create"],
     },
