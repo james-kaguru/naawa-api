@@ -12,11 +12,7 @@ const statement = {
 
 const systemAc = createAccessControl(statement);
 
-const staff = systemAc.newRole({
-  ...userAc.statements,
-});
-
-const parent = systemAc.newRole({
+const user = systemAc.newRole({
   ...userAc.statements,
 });
 
@@ -26,8 +22,7 @@ const adminRole = systemAc.newRole({
 
 export const UserRoles = {
   admin: "admin",
-  parent: "parent",
-  staff: "staff",
+  user: "user",
 } as const;
 
 export type UserRoles = (typeof UserRoles)[keyof typeof UserRoles];
@@ -38,7 +33,6 @@ export const adminPlugin = admin({
   ac: systemAc,
   roles: {
     admin: adminRole,
-    staff,
-    parent,
+    user,
   },
 });

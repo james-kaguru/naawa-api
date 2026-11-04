@@ -3,5 +3,4 @@
 User Roles
 
 - Admin
-- Staff
-- Parent
+- User
