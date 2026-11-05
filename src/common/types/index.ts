@@ -1,5 +1,6 @@
-import type { Request, Response } from 'express';
-export * from "./service"
+import type { OrgPermissions, Role } from "@/auth";
+import type { Request, Response } from "express";
+export * from "./service";
 
 type ReqShape = {
   params?: unknown;
@@ -7,7 +8,8 @@ type ReqShape = {
   query?: unknown;
 };
 
-type Field<T, K extends keyof ReqShape, Default> = T extends Record<K, infer V> ? V : Default;
+type Field<T, K extends keyof ReqShape, Default> =
+  T extends Record<K, infer V> ? V : Default;
 
 /**
  * Express Request typed by name instead of position, mirroring `validate({ params, body, query })`.
@@ -18,15 +20,15 @@ export type Req<T extends ReqShape = {}> = Request<
   unknown,
   Field<T, "body", unknown>,
   Field<T, "query", Request["query"]>
->
+>;
 
-export type Res<ResBody = unknown> = Response<ResBody>
+export type Res<ResBody = unknown> = Response<ResBody>;
 
 interface PaginationMeta {
-  page: number,
-  perPage: number,
-  totalPages: number,
-  totalCount: number
+  page: number;
+  perPage: number;
+  totalPages: number;
+  totalCount: number;
 }
 
 type PaginationLinks = {
@@ -38,10 +40,18 @@ type PaginationLinks = {
 };
 
 export interface PaginationServiceResponse<TData> {
-  data: TData[],
-  meta: PaginationMeta
+  data: TData[];
+  meta: PaginationMeta;
 }
 
-export type PaginationControllerResponse<TData> = PaginationServiceResponse<TData> & {
-  links: PaginationLinks
+export type PaginationControllerResponse<TData> =
+  PaginationServiceResponse<TData> & {
+    links: PaginationLinks;
+  };
+
+export interface UserInfo {
+  role: Role;
+  staffId: string | null;
+  parentId: string | null;
+  permissions: OrgPermissions;
 }

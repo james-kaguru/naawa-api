@@ -1,7 +1,7 @@
 import { ORGANIZATION_ID } from "@/common/constants";
 import { InternalServerError, NotFoundError } from "@/common/errors";
 import { bindAll } from "@/common/utils";
-import type { AuthDetails, Req, Res } from "@/common/types";
+import type { UserInfo, Req, Res } from "@/common/types";
 import type { Role } from "@/auth";
 import {
   memberService,
@@ -22,7 +22,7 @@ class MeController {
     bindAll(this);
   }
 
-  async findMe(_req: Req, res: Res): Promise<AuthDetails> {
+  async findMe(_req: Req, res: Res): Promise<UserInfo> {
     const user = currentUser(res);
 
     if (!user.role)
@@ -33,7 +33,10 @@ class MeController {
     const [staff, parent, permissions] = await Promise.all([
       orNull(staffService.findByMemberId(member.id)),
       orNull(parentService.findByMemberId(member.id)),
-      organizationRoleService.findPermissions(this.memberRoles(member.role), ORGANIZATION_ID),
+      organizationRoleService.findPermissions(
+        this.memberRoles(member.role),
+        ORGANIZATION_ID,
+      ),
     ]);
 
     return {
