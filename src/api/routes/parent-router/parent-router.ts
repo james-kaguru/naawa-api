@@ -49,7 +49,7 @@ parentRouter.get(
   "/me/children/:childId/enrollments",
   authorizationCheck({
     permissions: {
-      enrollment: ["list:own"],
+      enrollment: ["list:children"],
     },
   }),
   validate({ params: parentChildrenParamsSchema }),
@@ -59,7 +59,7 @@ parentRouter.get(
   "/me/children/:childId/attendances",
   authorizationCheck({
     permissions: {
-      attendance: ["list:own"],
+      attendance: ["list:children"],
     },
   }),
   validate({
@@ -72,7 +72,7 @@ parentRouter.get(
   "/me/children/:childId/activities",
   authorizationCheck({
     permissions: {
-      activity: ["list:own"],
+      activity: ["list:children"],
     },
   }),
   validate({

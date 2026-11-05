@@ -8,11 +8,11 @@ export const orgPermisstionStatement = {
   parent: ["create", "list", "update"],
   child: ["create", "list", "update", "create:own", "list:own", "update:own"],
   childrenCentre: ["create", "list", "update"],
-  enrollment: ["create", "list", "update", "list:own"],
+  enrollment: ["create", "list", "update", "list:children"],
   staff: ["create", "list", "delete"],
-  attendance: ["create", "list", "update", "list:own"],
-  activity: ["create", "list", "update", "list:own"],
-  incident: ["create", "list", "update", "list:own"],
+  attendance: ["create", "list", "update", "list:children"],
+  activity: ["create", "list", "update", "list:children"],
+  incident: ["create", "list", "update", "list:children"],
   thread: ["create", "list", "update", "list:own"],
   message: ["create:own", "list", "update:own"],
   invoice: ["create", "list", "update", "delete", "list:own"],
@@ -22,6 +22,13 @@ export const orgPermisstionStatement = {
 export const defaultParentPermissions: OrgPermissions = {
   child: ["create:own", "list:own", "update:own"],
   childrenCentre: ["list"],
+  enrollment: ["list:children"],
+  attendance: ["list:children"],
+  incident: ["list:children"],
+  activity: ["list:children"],
+  invoice: ["list:own"],
+  thread: ["list:own"],
+  message: ["create:own"],
 } as const;
 
 export type OrgPermissionStatement = typeof orgPermisstionStatement;
