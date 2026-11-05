@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { threadController } from "./thread-controller";
+import { threadController } from "./thread.controller";
 import { handle } from "@/common/utils/index";
 import { authorizationCheck } from "@/api/middlewares";
 import { validate } from "@/api/middlewares/validate.middleware";

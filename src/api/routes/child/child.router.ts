@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { childController } from "./child-controller";
+import { childController } from "./child.controller";
 import { handle } from "@/common/utils/index";
 import { validate } from "@/api/middlewares/validate.middleware";
 import {

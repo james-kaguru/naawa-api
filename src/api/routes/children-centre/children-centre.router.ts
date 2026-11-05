@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { childrenCentreController } from "./children-centre-controller";
+import { childrenCentreController } from "./children-centre.controller";
 import { handle } from "@/common/utils/index";
 import { validate } from "@/api/middlewares/validate.middleware";
 import {

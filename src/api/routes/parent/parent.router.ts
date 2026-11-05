@@ -2,7 +2,7 @@ import { authorizationCheck, validate } from "@/api/middlewares";
 import { Role } from "@/auth/plugins/admin";
 import { handle } from "@/common/utils/index";
 import { Router } from "express";
-import { parentController } from "./parent-controller";
+import { parentController } from "./parent.controller";
 import {
   createMyChildSchema,
   createParentSchema,

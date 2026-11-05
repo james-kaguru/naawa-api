@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { activityController } from "./activity-controller";
+import { activityController } from "./activity.controller";
 import { handle } from "@/common/utils/index";
 import { authorizationCheck } from "@/api/middlewares";
 import { validate } from "@/api/middlewares/validate.middleware";

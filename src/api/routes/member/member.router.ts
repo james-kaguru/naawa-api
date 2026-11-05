@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { handle } from "@/common/utils/index";
-import { memberController } from "./member-controller";
+import { memberController } from "./member.controller";
 
 const memberRouter: Router = Router();
 

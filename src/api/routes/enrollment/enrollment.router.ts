@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { enrollmentController } from "./enrollment-controller";
+import { enrollmentController } from "./enrollment.controller";
 import { handle } from "@/common/utils/index";
 import { validate } from "@/api/middlewares/validate.middleware";
 import {

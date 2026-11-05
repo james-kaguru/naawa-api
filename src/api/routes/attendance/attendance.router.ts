@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { attendanceController } from "./attendance-controller";
+import { attendanceController } from "./attendance.controller";
 import { handle } from "@/common/utils/index";
 import { authorizationCheck } from "@/api/middlewares";
 import { validate } from "@/api/middlewares/validate.middleware";

@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { invoiceController } from "./invoice-controller";
+import { invoiceController } from "./invoice.controller";
 import { handle } from "@/common/utils/index";
 import { authorizationCheck } from "@/api/middlewares";
 import { validate } from "@/api/middlewares/validate.middleware";

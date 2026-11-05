@@ -1,5 +1,5 @@
 import { Router, type NextFunction } from "express";
-import { messageController } from "./message-controller";
+import { messageController } from "./message.controller";
 import { handle } from "@/common/utils/index";
 import { authorizationCheck } from "@/api/middlewares";
 import { validate } from "@/api/middlewares/validate.middleware";

@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { staffController } from "./staff-controller";
+import { staffController } from "./staff.controller";
 import { handle } from "@/common/utils/index";
 import { validate } from "@/api/middlewares/validate.middleware";
 import {
