@@ -32,9 +32,9 @@ import { auth, defaultParentPermissions } from "@/auth";
 import { ORGANIZATION_ID } from "@/common/constants";
 import { fromNodeHeaders } from "better-auth/node";
 import { BadRequestError } from "@/common/errors";
-import type { UpdateChildSchema } from "../child-router/child.request.ts";
-import type { FindChildAttendancesSchema } from "../attendance-router/attendance.request.ts";
-import type { FindChildActivitiesSchema } from "../activity-router/activity.request.ts";
+import type { UpdateChildSchema } from "../child/child.request.ts";
+import type { FindChildAttendancesSchema } from "../attendance/attendance.request.ts";
+import type { FindChildActivitiesSchema } from "../activity/activity.request.ts";
 import { Role } from "@/auth";
 
 class ParentController {

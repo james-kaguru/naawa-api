@@ -4,7 +4,7 @@ import { parent, type ParentTable } from "@/db/schema"
 import { member, user } from "@/db/schema/auth.schema"
 import { NotFoundError } from "@/common/errors"
 import type { PaginationServiceResponse, Parent } from "@/common/types"
-import type { FindParentsSchema } from "@/api/routes/parent-router"
+import type { FindParentsSchema } from "@/api/routes/parent"
 
 export interface CreateParent {
   phoneNumber :string

@@ -5,7 +5,7 @@ import { attendance, child, childrenCentre, enrollment, staff, type AttendanceTa
 import { member, user } from "@/db/schema/auth.schema"
 import { NotFoundError, BadRequestError } from "@/common/errors"
 import type { Attendance, ChildAttendance, PaginationServiceResponse, Staff } from "@/common/types"
-import type { FindAttendancesSchema, FindChildAttendancesSchema } from "@/api/routes/attendance-router"
+import type { FindAttendancesSchema, FindChildAttendancesSchema } from "@/api/routes/attendance"
 import { childSelect, childrenCentreSelect, staffSelect } from "./columns"
 
 export interface CheckIn {

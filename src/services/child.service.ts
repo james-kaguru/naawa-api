@@ -16,9 +16,9 @@ import {
 } from "@/db/schema";
 import { NotFoundError } from "@/common/errors";
 import type { Child, ChildParent, PaginationServiceResponse } from "@/common/types";
-import type { FindChildrenSchema } from "@/api/routes/child-router";
-import type { FindUnenrolledChildrenSchema } from "@/api/routes/enrollment-router";
-import type { FindNotCheckedInChildrenSchema } from "@/api/routes/attendance-router";
+import type { FindChildrenSchema } from "@/api/routes/child";
+import type { FindUnenrolledChildrenSchema } from "@/api/routes/enrollment";
+import type { FindNotCheckedInChildrenSchema } from "@/api/routes/attendance";
 import { childColumns, childWith } from "./columns";
 
 export interface CreateChild {

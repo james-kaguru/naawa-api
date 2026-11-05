@@ -1,17 +1,17 @@
 import { Router } from "express";
-import { parentRouter } from "./parent-router";
-import { childRouter } from "./child-router";
-import { childrenCentreRouter } from "./children-centre-router";
-import { enrollmentRouter } from "./enrollment-router";
-import { staffRouter } from "./staff-router";
-import { attendanceRouter } from "./attendance-router";
-import { activityRouter } from "./activity-router";
-import { threadRouter } from "./thread-router";
-import { messageRouter } from "./message-router";
-import { invoiceRouter } from "./invoice-router";
-import { billingRunRouter } from "./billing-run-router";
-import { memberRouter } from "./member-router";
-import { meRouter } from "./me-router";
+import { parentRouter } from "./parent";
+import { childRouter } from "./child";
+import { childrenCentreRouter } from "./children-centre";
+import { enrollmentRouter } from "./enrollment";
+import { staffRouter } from "./staff";
+import { attendanceRouter } from "./attendance";
+import { activityRouter } from "./activity";
+import { threadRouter } from "./thread";
+import { messageRouter } from "./message";
+import { invoiceRouter } from "./invoice";
+import { billingRunRouter } from "./billing-run";
+import { memberRouter } from "./member";
+import { meRouter } from "./me";
 
 const router: Router = Router();
 

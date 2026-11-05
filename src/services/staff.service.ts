@@ -4,7 +4,7 @@ import { staff, type StaffTable } from "@/db/schema";
 import { member, user } from "@/db/schema/auth.schema";
 import { NotFoundError, BadRequestError } from "@/common/errors";
 import type { PaginationServiceResponse, Staff } from "@/common/types";
-import type { FindStaffSchema } from "@/api/routes/staff-router";
+import type { FindStaffSchema } from "@/api/routes/staff";
 import { staffSelect } from "./columns";
 
 export interface CreateStaff {

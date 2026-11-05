@@ -3,7 +3,7 @@ import { db, type Db } from "@/db";
 import { childrenCentre, type ChildrenCentreTable } from "@/db/schema";
 import { NotFoundError, BadRequestError } from "@/common/errors";
 import type { ChildrenCentre, PaginationServiceResponse } from "@/common/types";
-import type { FindChildrenCentresSchema } from "@/api/routes/children-centre-router";
+import type { FindChildrenCentresSchema } from "@/api/routes/children-centre";
 import { ORGANIZATION_ID } from "@/common/constants";
 
 export interface CreateChildrenCentre {

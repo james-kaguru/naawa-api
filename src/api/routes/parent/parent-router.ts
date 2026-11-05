@@ -11,8 +11,8 @@ import {
   updateMyChildSchema,
   updateParentSchema,
 } from "./parent.request";
-import { findChildAttendancesSchema } from "../attendance-router/attendance.request";
-import { findChildActivitiesSchema } from "../activity-router/activity.request";
+import { findChildAttendancesSchema } from "../attendance/attendance.request";
+import { findChildActivitiesSchema } from "../activity/activity.request";
 
 const parentRouter: Router = Router();
 

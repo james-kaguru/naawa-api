@@ -3,7 +3,7 @@ import { db, type Db } from "@/db"
 import { enrollment, type EnrollmentTable } from "@/db/schema"
 import { NotFoundError, BadRequestError } from "@/common/errors"
 import type { ChildEnrollment, Enrollment, PaginationServiceResponse } from "@/common/types"
-import type { FindEnrollmentsSchema } from "@/api/routes/enrollment-router"
+import type { FindEnrollmentsSchema } from "@/api/routes/enrollment"
 import { childEnrollmentWith, enrollmentColumns, enrollmentWith } from "./columns"
 
 export interface CreateEnrollment {

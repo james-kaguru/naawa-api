@@ -4,9 +4,9 @@ import { activity, attendance, childrenCentre, enrollment, staff, type ActivityT
 import { member, user } from "@/db/schema/auth.schema"
 import { BadRequestError, NotFoundError } from "@/common/errors"
 import type { Activity, ChildActivity, PaginationServiceResponse } from "@/common/types"
-import type { CreateActivitySchema, FindActivitiesSchema, FindChildActivitiesSchema, UpdateActivitySchema } from "@/api/routes/activity-router"
+import type { CreateActivitySchema, FindActivitiesSchema, FindChildActivitiesSchema, UpdateActivitySchema } from "@/api/routes/activity"
 import { childrenCentreSelect, staffSelect } from "./columns"
-import { updateActivityDetailsSchemas, updateNapDetailsSchema } from "@/api/routes/activity-router/activity.request"
+import { updateActivityDetailsSchemas, updateNapDetailsSchema } from "@/api/routes/activity/activity.request"
 
 type DistributiveOmit<T, K extends PropertyKey> = T extends unknown ? Omit<T, K> : never
 
