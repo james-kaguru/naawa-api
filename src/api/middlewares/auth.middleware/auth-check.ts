@@ -12,7 +12,7 @@ import { currentUser } from "./locals";
 
 export interface AuthorizationCheck {
   roles?: Role[];
-  permissions: OrgPermissions;
+  permissions?: OrgPermissions;
 }
 
 export type AuthFn = (req: Req, res: Res) => Promise<void>;
@@ -34,7 +34,7 @@ export function authorizationCheck(props: AuthorizationCheck, authFn?: AuthFn) {
         throw new ForbiddenError("Forbidden");
     }
 
-    if (props.permissions) {
+    if (props.permissions && Object.keys(props.permissions).length > 0) {
       const { success } = await auth.api.hasPermission({
         headers: fromNodeHeaders(req.headers),
         body: { permissions: props.permissions },
