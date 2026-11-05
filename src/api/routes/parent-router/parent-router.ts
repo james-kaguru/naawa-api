@@ -103,21 +103,14 @@ parentRouter.get(
 );
 parentRouter.post(
   "/",
-  authorizationCheck({
-    roles: [Role.admin, Role.staff, Role.systemAdmin],
-    permissions: {
-      parent: ["update"],
-    },
-  }),
   validate({ body: createParentSchema }),
   handle(parentController.create, 201),
 );
 parentRouter.put(
   "/:id",
   authorizationCheck({
-    roles: [Role.admin, Role.staff, Role.systemAdmin],
     permissions: {
-      parent: ["create"],
+      parent: ["update"],
     },
   }),
   validate({ body: updateParentSchema }),

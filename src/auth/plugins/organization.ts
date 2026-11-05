@@ -19,6 +19,11 @@ export const orgPermisstionStatement = {
   billingRun: ["create", "list"],
 } as const;
 
+export const defaultParentPermissions: OrgPermissions = {
+  child: ["create:own", "list:own", "update:own"],
+  childrenCentre: ["list"],
+} as const;
+
 export type OrgPermissionStatement = typeof orgPermisstionStatement;
 
 export type OrgPermissions = {

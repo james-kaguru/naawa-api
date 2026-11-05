@@ -1,22 +1,30 @@
-import { and, asc, count, eq, ilike, type SQL } from "drizzle-orm"
-import { db, type Db } from "@/db"
-import { member, user } from "@/db/schema/auth.schema"
-import { NotFoundError } from "@/common/errors"
-import type { Member, PaginationServiceResponse } from "@/common/types"
-import type { PaginationQuery } from "@/api/schemas"
+import { randomUUID } from "node:crypto";
+import { and, asc, count, eq, ilike, type SQL } from "drizzle-orm";
+import { db, type Db } from "@/db";
+import { member, user } from "@/db/schema/auth.schema";
+import { BadRequestError, NotFoundError } from "@/common/errors";
+import type { Member, PaginationServiceResponse } from "@/common/types";
+import type { PaginationQuery } from "@/api/schemas";
 
-export type MemberTable = typeof member
+export type MemberTable = typeof member;
 
 export type FindMembers = PaginationQuery & {
-  organizationId: string
-  name?: string | undefined
-  role?: string | undefined
-}
+  organizationId: string;
+  name?: string | undefined;
+  role?: string | undefined;
+};
 
+export type CreateMember = {
+  userId: string;
+  organizationId: string;
+  role: string;
+};
 
 export class MemberService {
-  constructor(private db: Db, private member: MemberTable) {
-  }
+  constructor(
+    private db: Db,
+    private member: MemberTable,
+  ) {}
 
   private get columns() {
     return {
@@ -26,71 +34,132 @@ export class MemberService {
       userId: this.member.userId,
       organizationId: this.member.organizationId,
       role: this.member.role,
-    }
+    };
   }
 
   private select() {
-    return this.db.select(this.columns)
+    return this.db
+      .select(this.columns)
       .from(this.member)
-      .innerJoin(user, eq(user.id, this.member.userId))
+      .innerJoin(user, eq(user.id, this.member.userId));
   }
 
-  async find({ page, perPage, paginate, organizationId, name, role }: FindMembers): Promise<PaginationServiceResponse<Member>> {
-    const filters: SQL[] = [eq(this.member.organizationId, organizationId)]
-    if (name) filters.push(ilike(user.name, `%${name}%`))
-    if (role) filters.push(eq(this.member.role, role))
+  async create({
+    userId,
+    organizationId,
+    role,
+  }: CreateMember): Promise<Member> {
+    const [existing] = await this.db
+      .select({ id: this.member.id })
+      .from(this.member)
+      .where(
+        and(
+          eq(this.member.userId, userId),
+          eq(this.member.organizationId, organizationId),
+        ),
+      )
+      .limit(1);
 
-    const where = and(...filters)
+    if (existing)
+      throw new BadRequestError(`User is already a member of organization`);
+
+    const [res] = await this.db
+      .insert(this.member)
+      .values({
+        id: randomUUID(),
+        userId,
+        organizationId,
+        role,
+        createdAt: new Date(),
+      })
+      .returning({ id: this.member.id });
+
+    return this.findOne(res!.id, organizationId);
+  }
+
+  async find({
+    page,
+    perPage,
+    paginate,
+    organizationId,
+    name,
+    role,
+  }: FindMembers): Promise<PaginationServiceResponse<Member>> {
+    const filters: SQL[] = [eq(this.member.organizationId, organizationId)];
+    if (name) filters.push(ilike(user.name, `%${name}%`));
+    if (role) filters.push(eq(this.member.role, role));
+
+    const where = and(...filters);
 
     const query = this.select()
       .where(where)
-      .orderBy(asc(user.name), asc(this.member.id))
+      .orderBy(asc(user.name), asc(this.member.id));
 
     if (!paginate) {
-      const data = await query
+      const data = await query;
 
       return {
         data,
-        meta: { page: 1, perPage: data.length, totalPages: 1, totalCount: data.length },
-      }
+        meta: {
+          page: 1,
+          perPage: data.length,
+          totalPages: 1,
+          totalCount: data.length,
+        },
+      };
     }
 
     const [data, [total]] = await Promise.all([
       query.limit(perPage).offset(perPage * (page - 1)),
-      this.db.select({ totalCount: count() })
+      this.db
+        .select({ totalCount: count() })
         .from(this.member)
         .innerJoin(user, eq(user.id, this.member.userId))
         .where(where),
-    ])
+    ]);
 
-    const totalCount = total?.totalCount ?? 0
+    const totalCount = total?.totalCount ?? 0;
 
     return {
       data,
-      meta: { page, perPage, totalPages: Math.ceil(totalCount / perPage), totalCount },
-    }
+      meta: {
+        page,
+        perPage,
+        totalPages: Math.ceil(totalCount / perPage),
+        totalCount,
+      },
+    };
   }
 
   async findOne(id: string, organizationId: string): Promise<Member> {
     const [res] = await this.select()
-      .where(and(eq(this.member.id, id), eq(this.member.organizationId, organizationId)))
-      .limit(1)
+      .where(
+        and(
+          eq(this.member.id, id),
+          eq(this.member.organizationId, organizationId),
+        ),
+      )
+      .limit(1);
 
-    if (!res) throw new NotFoundError(`Member ${id} not found`)
+    if (!res) throw new NotFoundError(`Member ${id} not found`);
 
-    return res
+    return res;
   }
 
   async findByUserId(userId: string, organizationId: string): Promise<Member> {
     const [res] = await this.select()
-      .where(and(eq(this.member.userId, userId), eq(this.member.organizationId, organizationId)))
-      .limit(1)
+      .where(
+        and(
+          eq(this.member.userId, userId),
+          eq(this.member.organizationId, organizationId),
+        ),
+      )
+      .limit(1);
 
-    if (!res) throw new NotFoundError(`Member with userId ${userId} not found`)
+    if (!res) throw new NotFoundError(`Member with userId ${userId} not found`);
 
-    return res
+    return res;
   }
 }
-
 
 export const memberService = new MemberService(db, member);

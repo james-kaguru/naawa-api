@@ -18,6 +18,13 @@ export interface Member {
 
 export type Permissions = Record<string, string[]>;
 
+export interface OrganizationRole {
+  id: string;
+  organizationId: string;
+  role: string;
+  permission: Permissions;
+}
+
 export interface Parent {
   id: string;
   name: string;

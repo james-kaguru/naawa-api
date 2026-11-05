@@ -23,8 +23,12 @@ import {
   type ParentService,
   type ChildService,
   type EnrollmentService,
+  organizationRoleService,
+  OrganizationRoleService,
+  memberService,
+  MemberService,
 } from "@/services";
-import { auth } from "@/auth";
+import { auth, defaultParentPermissions } from "@/auth";
 import { ORGANIZATION_ID } from "@/common/constants";
 import { fromNodeHeaders } from "better-auth/node";
 import { BadRequestError } from "@/common/errors";
@@ -40,6 +44,8 @@ class ParentController {
     private enrollmentService: EnrollmentService,
     private attendanceService: AttendanceService,
     private activityService: ActivityService,
+    private organizationRoleService: OrganizationRoleService,
+    private memberService: MemberService,
   ) {
     bindAll(this);
   }
@@ -47,29 +53,24 @@ class ParentController {
   async create(req: Req<{ body: CreateParentSchema }>) {
     const body = req.body;
 
-    const { user } = await auth.api.createUser({
+    const { user } = await auth.api.signUpEmail({
       body: {
         email: body.email,
         password: body.password,
         name: body.name,
-        role: Role.user,
       },
     });
 
-    await auth.api.getOrgRole({
-      query: {
-        roleName: "parent",
-        organizationId: ORGANIZATION_ID,
-      },
-      headers: fromNodeHeaders(req.headers),
-    });
+    await this.organizationRoleService.findOrCreate(
+      ORGANIZATION_ID,
+      "parent",
+      defaultParentPermissions,
+    );
 
-    const member = await auth.api.addMember({
-      body: {
-        userId: user.id,
-        role: "parent" as any,
-        organizationId: ORGANIZATION_ID,
-      },
+    const member = await memberService.create({
+      userId: user.id,
+      organizationId: ORGANIZATION_ID,
+      role: "parent",
     });
 
     const parent = await this.parentService.create({
@@ -201,4 +202,6 @@ export const parentController = new ParentController(
   enrollmentService,
   attendanceService,
   activityService,
+  organizationRoleService,
+  memberService,
 );
