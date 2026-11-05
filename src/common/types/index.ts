@@ -49,7 +49,7 @@ export type PaginationControllerResponse<TData> =
     links: PaginationLinks;
   };
 
-export interface UserInfo {
+export interface UserAuthInfo {
   role: Role;
   staffId: string | null;
   parentId: string | null;

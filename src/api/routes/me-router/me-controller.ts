@@ -1,7 +1,7 @@
 import { ORGANIZATION_ID } from "@/common/constants";
 import { InternalServerError, NotFoundError } from "@/common/errors";
 import { bindAll } from "@/common/utils";
-import type { UserInfo, Req, Res } from "@/common/types";
+import type { UserAuthInfo, Req, Res } from "@/common/types";
 import type { Role } from "@/auth";
 import {
   memberService,
@@ -22,7 +22,7 @@ class MeController {
     bindAll(this);
   }
 
-  async findMe(_req: Req, res: Res): Promise<UserInfo> {
+  async findMe(_req: Req, res: Res): Promise<UserAuthInfo> {
     const user = currentUser(res);
 
     if (!user.role)
