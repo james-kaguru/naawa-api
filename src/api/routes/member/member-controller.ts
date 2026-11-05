@@ -6,7 +6,7 @@ import { db } from "@/db";
 import { organization } from "@/db/schema/auth.schema";
 import { bindAll } from "@/common/utils";
 import { currentUser } from "../../middlewares/auth.middleware/index.ts";
-import { addMemberSchema } from "../../middlewares/validators/membervalidators.ts";
+import { addMemberSchema } from "./member.request.ts";
 
 class MemberController {
   constructor() {
