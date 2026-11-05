@@ -1,12 +1,12 @@
 import type { Request, Response } from "express";
 import { fromNodeHeaders } from "better-auth/node";
 import { APIError } from "better-auth/api";
-import { auth } from "../../auth/index.ts";
-import { db } from "../../db/index.ts";
-import { organization } from "../../db/schema/auth.schema.ts";
-import { bindAll } from "../../common/utils/index.ts";
-import { currentUser } from "../middlewares/auth.middleware/index.ts";
-import { addMemberSchema } from "../middlewares/validators/membervalidators.ts";
+import { auth } from "@/auth";
+import { db } from "@/db";
+import { organization } from "@/db/schema/auth.schema";
+import { bindAll } from "@/common/utils";
+import { currentUser } from "../../middlewares/auth.middleware/index.ts";
+import { addMemberSchema } from "../../middlewares/validators/membervalidators.ts";
 
 class MemberController {
   constructor() {
@@ -62,4 +62,4 @@ class MemberController {
   }
 }
 
-export default new MemberController();
+export const memberController = new MemberController();

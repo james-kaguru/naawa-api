@@ -10,7 +10,7 @@ import { threadRouter } from "./thread-router";
 import { messageRouter } from "./message-router";
 import { invoiceRouter } from "./invoice-router";
 import { billingRunRouter } from "./billing-run-router";
-import memberRouter from "./member.router.ts";
+import { memberRouter } from "./member-router";
 import { meRouter } from "./me-router";
 
 const router: Router = Router();
